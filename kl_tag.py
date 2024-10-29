@@ -1,3 +1,5 @@
+# TODO Загрузка и обработка постера по даблклику
+
 import os
 import sys
 import ctypes
@@ -44,6 +46,18 @@ def image_to_file(image):
     image_file = io.BytesIO()
     image.save(image_file, format="PNG")
     return image_file
+
+
+def get_resource_path(relative_path):
+    '''
+    Определение пути для запуска из автономного exe файла.
+    Pyinstaller cоздает временную папку, путь в _MEIPASS.
+    '''
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
 
 
 class MyFrame(wx.Frame):
@@ -231,6 +245,9 @@ class MyFrame(wx.Frame):
             else:
                 self.t_rating.Value = tags.rating
                 self.choice.SetSelection(0)
+        else:
+            self.t_rating.Value = tags.rating
+            self.choice.SetSelection(0)
         self.t_director.Value = ", ".join(tags.directors)
         self.t_kpid.Value = tags.kpid
         self.t_actors.Value = ", ".join(tags.actors)
@@ -247,8 +264,10 @@ class MyFrame(wx.Frame):
         self.tags.country = self.t_country.Value.split(", ")
         if self.choice.GetSelection() == 0:
             self.tags.rating = self.t_rating.Value
-        elif self.choice.GetSelection() == 1:
+        elif self.choice.GetSelection() == 1 and self.t_rating.Value:
             self.tags.rating = "i" + self.t_rating.Value
+        else:
+            self.tags.rating = self.t_rating.Value
         self.tags.directors = self.t_director.Value.split(", ")
         self.tags.kpid = self.t_kpid.Value
         self.tags.actors = self.t_actors.Value.split(", ")
