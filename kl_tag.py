@@ -101,11 +101,9 @@ class MyFrame(wx.Frame):
         self.tag_box_sizer.Add(self.t_description, proportion=1, flag=wx.EXPAND | wx.TOP | wx.BOTTOM | wx.LEFT, border=10)
 
         # poster
-        bmp_source = wx.Bitmap("./images/placeholder.png", wx.BITMAP_TYPE_PNG)
-        image = bmp_source.ConvertToImage()
-        bmp_converted = wx.Bitmap(image.Scale(self.FromDIP(200), self.FromDIP(300)))
-        self.image = wx.StaticBitmap(self.panel, wx.ID_ANY, bmp_converted, size=self.FromDIP((200, 300)))
-        self.l_image_size = wx.StaticText(self.panel, label=f"{bmp_source.Size[0]}×{bmp_source.Size[1]}")
+        self.placeholder = Image.open(".\images\placeholder.png")
+        self.image = wx.StaticBitmap(self.panel, wx.ID_ANY, self.scale_picture(self.placeholder), size=self.FromDIP((200, 300)))
+        self.l_image_size = wx.StaticText(self.panel, label=f"{self.placeholder.size[0]}×{self.placeholder.size[1]}")
         self.b_save = wx.Button(self.panel, wx.ID_OK, label="Сохранить", size=self.FromDIP((100, 25)))
 
         self.box1_h = wx.BoxSizer(orient=wx.HORIZONTAL)
@@ -191,9 +189,9 @@ class MyFrame(wx.Frame):
             if Image.open(io.BytesIO(video["covr"][0])):
                 result.cover = Image.open(io.BytesIO(video["covr"][0]))
             else:
-                result.cover = Image.open(".\images\placeholder.png")
+                result.cover = self.placeholder
         except:
-            result.cover = Image.open(".\images\placeholder.png")
+            result.cover = self.placeholder
 
         try:
             if video["----:com.apple.iTunes:kpid"][0].decode():
