@@ -31,6 +31,7 @@ class Mp4TagsClass:
     description: str
     long_descriplion: str
     cover: Image.Image
+    has_cover: bool
 
 
 def PIL2wx(image):
@@ -193,10 +194,13 @@ class MyFrame(wx.Frame):
         try:
             if Image.open(io.BytesIO(video["covr"][0])):
                 result.cover = Image.open(io.BytesIO(video["covr"][0]))
+                result.has_cover = True
             else:
                 result.cover = self.placeholder
+                result.has_cover = False
         except:
             result.cover = self.placeholder
+            result.has_cover = False
 
         try:
             if video["----:com.apple.iTunes:kpid"][0].decode():
@@ -218,7 +222,10 @@ class MyFrame(wx.Frame):
         self.t_actors.Value = ", ".join(tags.actors)
         self.t_description.Value = tags.description
         self.image.Bitmap = self.scale_picture(tags.cover)
-        self.l_image_size.Label = f"{tags.cover.size[0]}×{tags.cover.size[1]}"
+        if tags.has_cover:
+            self.l_image_size.Label = f"{tags.cover.size[0]}×{tags.cover.size[1]}"
+        else:
+            self.l_image_size.Label = ""
 
     def scale_picture(self, picture: Image.Image):
         bmp_source = wx.Bitmap(PIL2wx(picture))
