@@ -63,7 +63,8 @@ class MyFrame(wx.Frame):
 
         # country + rating
         self.l_country = wx.StaticText(self.panel, label="Страна:", size=self.l_title.Size)
-        self.t_country = wx.TextCtrl(self.panel, value="", size=(250, 28))
+        self.t_country = wx.TextCtrl(self.panel, value="")
+
         self.l_rating = wx.StaticText(self.panel, label="Рейтинг:")
         self.t_rating = wx.TextCtrl(self.panel, value="", size=(50, 28))
         self.choice = wx.Choice(self.panel, choices=["Кинопоиск", "IMDB"])
@@ -79,11 +80,15 @@ class MyFrame(wx.Frame):
 
         # director
         self.l_director = wx.StaticText(self.panel, label="Режиссер:", size=self.l_title.Size)
-        self.t_director = wx.TextCtrl(self.panel, value="", size=(250, 28))
+        self.t_director = wx.TextCtrl(self.panel, value="", size=self.t_country.Size)
+        self.l_kpid = wx.StaticText(self.panel, label="Kinopoisk ID:")
+        self.t_kpid = wx.TextCtrl(self.panel, value="", size=(140, 28))
         self.tag_box_director = wx.BoxSizer(orient=wx.HORIZONTAL)
 
         self.tag_box_director.Add(self.l_director, flag=wx.ALIGN_CENTER | wx.RIGHT, border=10)
-        self.tag_box_director.Add(self.t_director, proportion=1, flag=wx.ALIGN_CENTER)
+        self.tag_box_director.Add(self.t_director, proportion=1, flag=wx.ALIGN_CENTER | wx.RIGHT, border=10)
+        self.tag_box_director.Add(self.l_kpid, flag=wx.ALIGN_CENTER | wx.RIGHT, border=10)
+        self.tag_box_director.Add(self.t_kpid, flag=wx.ALIGN_CENTER)
         self.tag_box_sizer.Add(self.tag_box_director, flag=wx.EXPAND | wx.TOP | wx.BOTTOM | wx.LEFT, border=10)
 
         # actors
@@ -209,6 +214,7 @@ class MyFrame(wx.Frame):
         self.t_country.Value = ", ".join(tags.country)
         self.t_rating.Value = tags.rating
         self.t_director.Value = ", ".join(tags.directors)
+        self.t_kpid.Value = tags.kpid
         self.t_actors.Value = ", ".join(tags.actors)
         self.t_description.Value = tags.description
         self.image.Bitmap = self.scale_picture(tags.cover)
