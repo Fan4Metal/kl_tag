@@ -39,6 +39,13 @@ def PIL2wx(image):
     return wx.Bitmap.FromBuffer(width, height, image.tobytes())
 
 
+def image_to_file(image):
+    """Return `image` as PNG file-like object."""
+    image_file = io.BytesIO()
+    image.save(image_file, format="PNG")
+    return image_file
+
+
 class MyFrame(wx.Frame):
 
     def __init__(self, parent, title):
@@ -111,6 +118,7 @@ class MyFrame(wx.Frame):
         self.image = wx.StaticBitmap(self.panel, wx.ID_ANY, self.scale_picture(self.placeholder), size=self.FromDIP((200, 300)))
         self.l_image_size = wx.StaticText(self.panel, label=f"{self.placeholder.size[0]}×{self.placeholder.size[1]}")
         self.b_save = wx.Button(self.panel, wx.ID_OK, label="Сохранить", size=self.FromDIP((100, 25)))
+        self.Bind(wx.EVT_BUTTON, self.onSaveTags, id=self.b_save.GetId())
 
         self.box1_h = wx.BoxSizer(orient=wx.HORIZONTAL)
         self.box2_v = wx.BoxSizer(orient=wx.VERTICAL)
@@ -216,7 +224,13 @@ class MyFrame(wx.Frame):
         self.t_title.Value = tags.title
         self.t_year.Value = tags.year
         self.t_country.Value = ", ".join(tags.country)
-        self.t_rating.Value = tags.rating
+        if tags.rating:
+            if tags.rating[0] == "i":
+                self.t_rating.Value = tags.rating[1:]
+                self.choice.SetSelection(1)
+            else:
+                self.t_rating.Value = tags.rating
+                self.choice.SetSelection(0)
         self.t_director.Value = ", ".join(tags.directors)
         self.t_kpid.Value = tags.kpid
         self.t_actors.Value = ", ".join(tags.actors)
@@ -226,6 +240,20 @@ class MyFrame(wx.Frame):
             self.l_image_size.Label = f"{tags.cover.size[0]}×{tags.cover.size[1]}"
         else:
             self.l_image_size.Label = ""
+
+    def GetTags(self):
+        self.tags.title = self.t_title.Value
+        self.tags.year = self.t_year.Value
+        self.tags.country = self.t_country.Value.split(", ")
+        if self.choice.GetSelection() == 0:
+            self.tags.rating = self.t_rating.Value
+        elif self.choice.GetSelection() == 1:
+            self.tags.rating = "i" + self.t_rating.Value
+        self.tags.directors = self.t_director.Value.split(", ")
+        self.tags.kpid = self.t_kpid.Value
+        self.tags.actors = self.t_actors.Value.split(", ")
+        self.tags.description = self.t_description.Value
+        # self.tags.cover = self.placeholder
 
     def scale_picture(self, picture: Image.Image):
         bmp_source = wx.Bitmap(PIL2wx(picture))
@@ -250,12 +278,62 @@ class MyFrame(wx.Frame):
             self.tags = self.ReadTags(self.list_paths[self.list_files.GetSelection()])
             self.ShowTags(self.tags)
 
+    def onSaveTags(self, event):
+        self.GetTags()
+        file_path = self.list_paths[self.list_files.GetSelection()]
+        try:
+            video = MP4(file_path)
+        except MP4StreamInfoError as error:
+            wx.MessageDialog(None, "Ошибка! Не удалось открыть файл!\n({error})", "Ошибка!", wx.OK | wx.ICON_ERROR).ShowModal()
+
+            log.error(f"Ошибка! Не удалось открыть файл ({error}): {os.path.basename(file_path)}")
+            return False
+        # try:
+        #     video.delete()  # удаление всех тегов
+        # except Exception as error:
+        #     log.error(f"Ошибка при сохранении тегов в файл ({error}): {os.path.basename(file_path)}")
+        #     return False
+        video["\xa9nam"] = self.tags.title  # title
+        if self.tags.description:
+            video["desc"] = self.tags.description  # description
+            video["ldes"] = self.tags.description  # long description
+        else:
+            video["desc"] = " "  # description
+            video["ldes"] = " "  # long description
+        if self.tags.year:
+            video["\xa9day"] = self.tags.year  # year
+
+        if self.tags.has_cover:
+            video["covr"] = [MP4Cover(image_to_file(self.tags.cover).getvalue(), imageformat=MP4Cover.FORMAT_PNG)]
+        video["----:com.apple.iTunes:DIRECTOR"] = MP4FreeForm((";".join(self.tags.directors)).encode(), AtomDataType.UTF8)
+        bufferlist = []
+        for item in self.tags.actors:
+            bufferlist.append('')
+            bufferlist.append(item)
+        video["----:com.apple.iTunes:Actors"] = MP4FreeForm(("\r\n".join(bufferlist)).encode(), AtomDataType.UTF8)
+        if self.tags.rating:
+            video["----:com.apple.iTunes:kpra"] = MP4FreeForm(self.tags.rating.encode(), AtomDataType.UTF8)
+        else:
+            video["----:com.apple.iTunes:kpra"] = MP4FreeForm(("").encode(), AtomDataType.UTF8)
+        if self.tags.country:
+            video["----:com.apple.iTunes:countr"] = MP4FreeForm((";".join(self.tags.country)).encode(), AtomDataType.UTF8)
+        if self.tags.kpid:
+            video["----:com.apple.iTunes:kpid"] = MP4FreeForm((self.tags.kpid).encode(), AtomDataType.UTF8)
+        try:
+            video.save()
+        except Exception as error:
+            wx.MessageDialog(None, "Ошибка при сохранении тегов в файл!\n({error})", "Ошибка!", wx.OK | wx.ICON_ERROR).ShowModal()
+            log.error(f"Ошибка при сохранении тегов в файл ({error}): {os.path.basename(file_path)}")
+            return False
+        return True
+
     def ListClick(self, event):
         self.tags = self.ReadTags(self.list_paths[self.list_files.GetSelection()])
         self.ShowTags(self.tags)
 
     def TextChange(self, event):
         self.t_actors.Value = self.t_actors.Value.replace("\n", ", ")
+        self.t_actors.SetInsertionPointEnd()
 
 
 def main():
