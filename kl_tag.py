@@ -89,6 +89,7 @@ class MyFrame(wx.Frame):
         # actors
         self.l_actors = wx.StaticText(self.panel, label="Актеры:")
         self.t_actors = wx.TextCtrl(self.panel, wx.ID_ANY, style=wx.ALIGN_TOP | wx.TE_MULTILINE | wx.TE_WORDWRAP)
+        self.Bind(wx.EVT_TEXT, self.TextChange, id=self.t_actors.GetId())
 
         # description
         self.l_description = wx.StaticText(self.panel, label="Описание:")
@@ -129,7 +130,6 @@ class MyFrame(wx.Frame):
             log.error(f"Ошибка! Не удалось открыть файл ({error}): {os.path.basename(file_path)}")
             return None
         result = Mp4TagsClass
-        # try:
 
         try:
             if video["\xa9nam"][0]:
@@ -203,8 +203,6 @@ class MyFrame(wx.Frame):
         except:
             result.kpid = ""
 
-        # except Exception as e:
-        #     return None
         return result
 
     def ShowTags(self, tags: Mp4TagsClass):
@@ -244,6 +242,9 @@ class MyFrame(wx.Frame):
     def ListClick(self, event):
         self.tags = self.ReadTags(self.list_paths[self.list_files.GetSelection()])
         self.ShowTags(self.tags)
+
+    def TextChange(self, event):
+        self.t_actors.Value = self.t_actors.Value.replace("\n", ", ")
 
 
 def main():
