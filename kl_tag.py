@@ -413,7 +413,7 @@ class MyFrame(wx.Frame):
 def main():
     app = wx.App()
     top = MyFrame(None, title=f"KL Tag {VER}")
-    # top.SetIcon(wx.Icon(kl.get_resource_path("favicon.ico")))
+    top.SetIcon(wx.Icon(get_resource_path("./images/favicon.ico")))
     top.SetClientSize(top.FromDIP(wx.Size(1000, 500)))
     top.Centre()
     top.SetMinSize(top.Size)
