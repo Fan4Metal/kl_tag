@@ -1,5 +1,3 @@
-# TODO Загрузка и обработка постера по даблклику
-
 import os
 import sys
 import ctypes
@@ -412,7 +410,7 @@ class MyFrame(wx.Frame):
 
 def main():
     app = wx.App()
-    top = MyFrame(None, title=f"KL Tag {VER}")
+    top = MyFrame(None, title=f"Kinolist Tag Editor {VER}")
     top.SetIcon(wx.Icon(get_resource_path("./images/favicon.ico")))
     top.SetClientSize(top.FromDIP(wx.Size(1000, 500)))
     top.Centre()
