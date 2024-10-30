@@ -313,7 +313,6 @@ class MyFrame(wx.Frame):
             video = MP4(file_path)
         except MP4StreamInfoError as error:
             wx.MessageDialog(None, "Ошибка! Не удалось открыть файл!\n({error})", "Ошибка!", wx.OK | wx.ICON_ERROR).ShowModal()
-
             log.error(f"Ошибка! Не удалось открыть файл ({error}): {os.path.basename(file_path)}")
             return False
         # try:
@@ -353,8 +352,8 @@ class MyFrame(wx.Frame):
         try:
             video.save()
         except Exception as error:
-            wx.MessageDialog(None, "Ошибка при сохранении тегов в файл!\n({error})", "Ошибка!", wx.OK | wx.ICON_ERROR).ShowModal()
-            log.error(f"Ошибка при сохранении тегов в файл ({error}): {os.path.basename(file_path)}")
+            wx.MessageDialog(None, f"Ошибка при сохранении тегов в файл!\n{error}", "Ошибка!", wx.OK | wx.ICON_ERROR).ShowModal()
+            log.error(f"Ошибка при сохранении тегов в файл! ({error})!")
             return False
         return True
 
