@@ -33,8 +33,9 @@ class Mp4TagsClass:
     actors: list
     description: str
     long_descriplion: str
-    cover: Image.Image
+    cover: Image.Image | str
     has_cover: bool
+    is_ok: bool
 
 
 def image_to_file(image):
@@ -148,12 +149,12 @@ class MyFrame(wx.Frame):
         self.OpenFiles()
 
     def ReadTags(self, file_path) -> Mp4TagsClass | None:
+        result = Mp4TagsClass("", "", "", "", "", "", "", "", "", "", False, False)
         try:
             video = MP4(file_path)
         except Exception as error:
             log.error(f"Ошибка! Не удалось открыть файл ({error}): {os.path.basename(file_path)}")
-            return None
-        result = Mp4TagsClass
+            return result
 
         try:
             if video["\xa9nam"][0]:
@@ -230,6 +231,7 @@ class MyFrame(wx.Frame):
         except:
             result.kpid = ""
 
+        result.is_ok = True
         return result
 
     def ShowTags(self):
@@ -286,6 +288,10 @@ class MyFrame(wx.Frame):
             self.list_files.AppendItems(os.path.basename(self.list_paths[0]))
             self.list_files.Select(0)
             self.tags = self.ReadTags(self.list_paths[self.list_files.GetSelection()])
+            if not self.tags.is_ok:
+                self.DisableInterface()
+                return
+            self.EnableInterface()
             self.ShowTags()
 
         if os.path.isdir(sys.argv[1]):
@@ -294,6 +300,10 @@ class MyFrame(wx.Frame):
                 self.list_files.AppendItems(os.path.basename(path))
             self.list_files.Select(0)
             self.tags = self.ReadTags(self.list_paths[self.list_files.GetSelection()])
+            if not self.tags.is_ok:
+                self.DisableInterface()
+                return
+            self.EnableInterface()
             self.ShowTags()
 
     def onSaveTags(self, event):
@@ -350,6 +360,10 @@ class MyFrame(wx.Frame):
 
     def ListClick(self, event):
         self.tags = self.ReadTags(self.list_paths[self.list_files.GetSelection()])
+        if not self.tags.is_ok:
+            self.DisableInterface()
+            return
+        self.EnableInterface()
         self.ShowTags()
 
     def TextChange(self, event):
@@ -406,6 +420,44 @@ class MyFrame(wx.Frame):
         self.tags.cover = ""
         self.tags.has_cover = False
         self.ShowPoster()
+
+    def ClearTags(self):
+        self.tags.actors = ""
+        self.tags.country = ""
+        self.tags.description = ""
+        self.tags.directors = ""
+        self.tags.kpid = ""
+        self.tags.title = ""
+        self.tags.year = ""
+        self.tags.long_descriplion = ""
+        self.tags.rating = ""
+        self.tags.has_cover = False
+        self.ShowTags()
+
+    def DisableInterface(self):
+
+        self.ClearTags()
+        self.t_title.Disable()
+        self.t_actors.Disable()
+        self.t_country.Disable()
+        self.t_description.Disable()
+        self.t_director.Disable()
+        self.t_kpid.Disable()
+        self.t_rating.Disable()
+        self.t_year.Disable()
+        self.b_save.Disable()
+
+    def EnableInterface(self):
+
+        self.t_title.Enable()
+        self.t_actors.Enable()
+        self.t_country.Enable()
+        self.t_description.Enable()
+        self.t_director.Enable()
+        self.t_kpid.Enable()
+        self.t_rating.Enable()
+        self.t_year.Enable()
+        self.b_save.Enable()
 
 
 def main():
