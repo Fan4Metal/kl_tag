@@ -13,13 +13,14 @@ from PIL import Image
 
 ctypes.windll.shcore.SetProcessDpiAwareness(2)
 
-VER = "0.1.1"
+VER = "0.1.2"
 
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s', datefmt='%d.%m.%Y %H:%M:%S')
 log = logging.getLogger("KL Tag")
 
 wildcard_pics = "Изображения (*.png;*.jpg;*.jpeg;*.webp)|*.png;*.jpg;*.jpeg;*.webp|"\
             "Все файлы (*.*)|*.*"
+wildcard_png = "Изображения (*.png)|*.png|Все файлы (*.*)|*.*"
 
 
 @dataclass
@@ -377,12 +378,16 @@ class MyFrame(wx.Frame):
         menu = wx.Menu()
         item1 = wx.MenuItem(menu, wx.ID_ANY, "Добавить постер")
         self.Bind(wx.EVT_MENU, self.OnAddPoster, id=item1.GetId())
-        item2 = wx.MenuItem(menu, wx.ID_ANY, "Удалить постер")
-        self.Bind(wx.EVT_MENU, self.OnDelPoster, id=item2.GetId())
+        item2 = wx.MenuItem(menu, wx.ID_ANY, "Сохранить постер")
+        self.Bind(wx.EVT_MENU, self.OnSavePoster, id=item2.GetId())
+        item3 = wx.MenuItem(menu, wx.ID_ANY, "Удалить постер")
+        self.Bind(wx.EVT_MENU, self.OnDelPoster, id=item3.GetId())
 
         menu.Append(item1)
         if self.tags.has_cover:
             menu.Append(item2)
+            menu.AppendSeparator()
+            menu.Append(item3)
         self.PopupMenu(menu)
         menu.Destroy()
 
@@ -418,6 +423,14 @@ class MyFrame(wx.Frame):
         self.tags.cover = cover
         self.tags.has_cover = True
         self.ShowPoster()
+
+    def OnSavePoster(self, event):
+        with wx.FileDialog(self, "Сохранить файл...", "", "", wildcard_png, style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as fileDialog:
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return
+            image_path = fileDialog.GetPath()
+        if self.tags.has_cover:
+            self.tags.cover.save(image_path)
 
     def OnDelPoster(self, event):
         self.tags.cover = ""
