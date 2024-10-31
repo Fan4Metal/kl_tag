@@ -235,23 +235,23 @@ class MyFrame(wx.Frame):
         return result
 
     def ShowTags(self):
-        self.t_title.SetValue(self.tags.title)
-        self.t_year.SetValue(self.tags.year)
-        self.t_country.SetValue(", ".join(self.tags.country))
+        self.t_title.ChangeValue(self.tags.title)
+        self.t_year.ChangeValue(self.tags.year)
+        self.t_country.ChangeValue(", ".join(self.tags.country))
         if self.tags.rating:
             if self.tags.rating[0] == "i":
-                self.t_rating.SetValue(self.tags.rating[1:])
+                self.t_rating.ChangeValue(self.tags.rating[1:])
                 self.choice.SetSelection(1)
             else:
-                self.t_rating.SetValue(self.tags.rating)
+                self.t_rating.ChangeValue(self.tags.rating)
                 self.choice.SetSelection(0)
         else:
-            self.t_rating.SetValue(self.tags.rating)
+            self.t_rating.ChangeValue(self.tags.rating)
             self.choice.SetSelection(0)
-        self.t_director.SetValue(", ".join(self.tags.directors))
-        self.t_kpid.SetValue(self.tags.kpid)
+        self.t_director.ChangeValue(", ".join(self.tags.directors))
+        self.t_kpid.ChangeValue(self.tags.kpid)
         self.t_actors.ChangeValue(", ".join(self.tags.actors))  # doesn't generate wx.EVT_TEXT
-        self.t_description.SetValue(self.tags.description)
+        self.t_description.ChangeValue(self.tags.description)
         self.ShowPoster()
 
     def ShowPoster(self):
