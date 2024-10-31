@@ -13,7 +13,7 @@ from PIL import Image
 
 ctypes.windll.shcore.SetProcessDpiAwareness(2)
 
-VER = "0.1.0"
+VER = "0.1.1"
 
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s', datefmt='%d.%m.%Y %H:%M:%S')
 log = logging.getLogger("KL Tag")
@@ -113,7 +113,7 @@ class MyFrame(wx.Frame):
         # actors
         self.l_actors = wx.StaticText(self.panel, label="Актеры:")
         self.t_actors = wx.TextCtrl(self.panel, wx.ID_ANY, style=wx.ALIGN_TOP | wx.TE_MULTILINE | wx.TE_WORDWRAP)
-        self.Bind(wx.EVT_TEXT, self.TextChange, id=self.t_actors.GetId())
+        self.t_actors.Bind(wx.EVT_TEXT, self.TextChange)
 
         # description
         self.l_description = wx.StaticText(self.panel, label="Описание:")
@@ -125,7 +125,7 @@ class MyFrame(wx.Frame):
         self.tag_box_sizer.Add(self.t_description, proportion=1, flag=wx.EXPAND | wx.TOP | wx.BOTTOM | wx.LEFT, border=10)
 
         # poster
-        self.placeholder = Image.open(R".\images\placeholder.png")
+        self.placeholder = Image.open(get_resource_path(R".\images\placeholder.png"))
         self.image = wx.StaticBitmap(self.panel, wx.ID_ANY, self.scale_picture(self.placeholder), size=self.FromDIP((200, 300)))
         self.image.Bind(wx.EVT_CONTEXT_MENU, self.OnPosterContextMenu)
         self.l_image_size = wx.StaticText(self.panel, label="Нет постера")
@@ -235,23 +235,23 @@ class MyFrame(wx.Frame):
         return result
 
     def ShowTags(self):
-        self.t_title.Value = self.tags.title
-        self.t_year.Value = self.tags.year
-        self.t_country.Value = ", ".join(self.tags.country)
+        self.t_title.SetValue(self.tags.title)
+        self.t_year.SetValue(self.tags.year)
+        self.t_country.SetValue(", ".join(self.tags.country))
         if self.tags.rating:
             if self.tags.rating[0] == "i":
-                self.t_rating.Value = self.tags.rating[1:]
+                self.t_rating.SetValue(self.tags.rating[1:])
                 self.choice.SetSelection(1)
             else:
-                self.t_rating.Value = self.tags.rating
+                self.t_rating.SetValue(self.tags.rating)
                 self.choice.SetSelection(0)
         else:
-            self.t_rating.Value = self.tags.rating
+            self.t_rating.SetValue(self.tags.rating)
             self.choice.SetSelection(0)
-        self.t_director.Value = ", ".join(self.tags.directors)
-        self.t_kpid.Value = self.tags.kpid
-        self.t_actors.Value = ", ".join(self.tags.actors)
-        self.t_description.Value = self.tags.description
+        self.t_director.SetValue(", ".join(self.tags.directors))
+        self.t_kpid.SetValue(self.tags.kpid)
+        self.t_actors.ChangeValue(", ".join(self.tags.actors))  # doesn't generate wx.EVT_TEXT
+        self.t_description.SetValue(self.tags.description)
         self.ShowPoster()
 
     def ShowPoster(self):
@@ -323,11 +323,6 @@ class MyFrame(wx.Frame):
             wx.MessageDialog(None, "Ошибка! Не удалось открыть файл!\n({error})", "Ошибка!", wx.OK | wx.ICON_ERROR).ShowModal()
             log.error(f"Ошибка! Не удалось открыть файл ({error}): {os.path.basename(file_path)}")
             return False
-        # try:
-        #     video.delete()  # удаление всех тегов
-        # except Exception as error:
-        #     log.error(f"Ошибка при сохранении тегов в файл ({error}): {os.path.basename(file_path)}")
-        #     return False
         video["\xa9nam"] = self.tags.title  # title
         if self.tags.description:
             video["desc"] = self.tags.description  # description
@@ -375,7 +370,7 @@ class MyFrame(wx.Frame):
         self.ShowTags()
 
     def TextChange(self, event):
-        self.t_actors.Value = self.t_actors.Value.replace("\n", ", ")
+        self.t_actors.ChangeValue(self.t_actors.Value.replace("\n", ", "))
         self.t_actors.SetInsertionPointEnd()
 
     def OnPosterContextMenu(self, event):
