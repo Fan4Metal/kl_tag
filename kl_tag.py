@@ -125,7 +125,7 @@ class MyFrame(wx.Frame):
         self.tag_box_sizer.Add(self.t_description, proportion=1, flag=wx.EXPAND | wx.TOP | wx.BOTTOM | wx.LEFT, border=10)
 
         # poster
-        self.placeholder = Image.open(".\images\placeholder.png")
+        self.placeholder = Image.open(R".\images\placeholder.png")
         self.image = wx.StaticBitmap(self.panel, wx.ID_ANY, self.scale_picture(self.placeholder), size=self.FromDIP((200, 300)))
         self.image.Bind(wx.EVT_CONTEXT_MENU, self.OnPosterContextMenu)
         self.l_image_size = wx.StaticText(self.panel, label="Нет постера")
@@ -282,6 +282,8 @@ class MyFrame(wx.Frame):
 
     def OpenFiles(self):
         if len(sys.argv) != 2:
+            self.tags = Mp4TagsClass("", "", "", "", "", "", "", "", "", "", False, False)
+            self.DisableInterface()
             return
         if os.path.isfile(sys.argv[1]):
             self.list_paths.append(sys.argv[1])
@@ -289,6 +291,7 @@ class MyFrame(wx.Frame):
             self.list_files.Select(0)
             self.tags = self.ReadTags(self.list_paths[self.list_files.GetSelection()])
             if not self.tags.is_ok:
+                self.ClearTags()
                 self.DisableInterface()
                 return
             self.EnableInterface()
@@ -296,11 +299,16 @@ class MyFrame(wx.Frame):
 
         if os.path.isdir(sys.argv[1]):
             self.list_paths = glob(os.path.join(sys.argv[1], "*.mp4"))
+            if not self.list_paths:
+                self.tags = Mp4TagsClass("", "", "", "", "", "", "", "", "", "", False, False)
+                self.DisableInterface()
+                return
             for path in self.list_paths:
                 self.list_files.AppendItems(os.path.basename(path))
             self.list_files.Select(0)
             self.tags = self.ReadTags(self.list_paths[self.list_files.GetSelection()])
             if not self.tags.is_ok:
+                self.ClearTags()
                 self.DisableInterface()
                 return
             self.EnableInterface()
@@ -360,6 +368,7 @@ class MyFrame(wx.Frame):
     def ListClick(self, event):
         self.tags = self.ReadTags(self.list_paths[self.list_files.GetSelection()])
         if not self.tags.is_ok:
+            self.ClearTags()
             self.DisableInterface()
             return
         self.EnableInterface()
@@ -434,8 +443,6 @@ class MyFrame(wx.Frame):
         self.ShowTags()
 
     def DisableInterface(self):
-
-        self.ClearTags()
         self.t_title.Disable()
         self.t_actors.Disable()
         self.t_country.Disable()
@@ -445,9 +452,9 @@ class MyFrame(wx.Frame):
         self.t_rating.Disable()
         self.t_year.Disable()
         self.b_save.Disable()
+        self.choice.Disable()
 
     def EnableInterface(self):
-
         self.t_title.Enable()
         self.t_actors.Enable()
         self.t_country.Enable()
@@ -457,6 +464,7 @@ class MyFrame(wx.Frame):
         self.t_rating.Enable()
         self.t_year.Enable()
         self.b_save.Enable()
+        self.choice.Enable()
 
 
 def main():
