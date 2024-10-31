@@ -63,7 +63,7 @@ class MyFrame(wx.Frame):
         super().__init__(parent, title=title, style=(wx.DEFAULT_FRAME_STYLE | wx.WANTS_CHARS) & ~(wx.MAXIMIZE_BOX))
 
         self.panel = wx.Panel(self)
-        self.list_files = wx.ListBox(self.panel, size=self.FromDIP(wx.Size(200, 30)))
+        self.list_files = wx.ListBox(self.panel, size=self.FromDIP(wx.Size(350, 30)))
         self.Bind(wx.EVT_LISTBOX, self.ListClick, id=self.list_files.GetId())
         self.tag_box_sizer = wx.StaticBoxSizer(wx.VERTICAL, self.panel)
 
@@ -466,7 +466,7 @@ def main():
     app = wx.App()
     top = MyFrame(None, title=f"Kinolist Tag Editor {VER}")
     top.SetIcon(wx.Icon(get_resource_path("./images/favicon.ico")))
-    top.SetClientSize(top.FromDIP(wx.Size(1000, 500)))
+    top.SetClientSize(top.FromDIP(wx.Size(1150, 600)))
     top.Centre()
     top.SetMinSize(top.Size)
     top.Show()
