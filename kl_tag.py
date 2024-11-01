@@ -3,6 +3,7 @@ import sys
 import ctypes
 import logging
 import io
+import re
 from dataclasses import dataclass
 from glob import glob
 
@@ -371,8 +372,7 @@ class MyFrame(wx.Frame):
         self.ShowTags()
 
     def TextChange(self, event):
-        self.t_actors.ChangeValue(self.t_actors.Value.replace("\n", ", "))
-        self.t_actors.SetInsertionPointEnd()
+        self.t_actors.ChangeValue(re.sub(r"\ \ +", "", self.t_actors.Value).replace("\n", ", "))
 
     def OnPosterContextMenu(self, event):
         menu = wx.Menu()
