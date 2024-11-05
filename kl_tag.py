@@ -115,7 +115,7 @@ class MyFrame(wx.Frame):
         # actors
         self.l_actors = wx.StaticText(self.panel, label="Актеры:")
         self.t_actors = wx.TextCtrl(self.panel, wx.ID_ANY, style=wx.ALIGN_TOP | wx.TE_MULTILINE | wx.TE_WORDWRAP)
-        self.t_actors.Bind(wx.EVT_TEXT, self.TextChange)
+        self.t_actors.Bind(wx.EVT_TEXT_PASTE, self.TextPaste)
 
         # description
         self.l_description = wx.StaticText(self.panel, label="Описание:")
@@ -371,8 +371,10 @@ class MyFrame(wx.Frame):
         self.EnableInterface()
         self.ShowTags()
 
-    def TextChange(self, event):
-        self.t_actors.ChangeValue(re.sub(r"\ \ +", "", self.t_actors.Value).replace("\n", ", "))
+    def TextPaste(self, event):
+        text = read_from_buffer().strip(" \n")
+        text = re.sub(r"\ \ +", "", text).replace("\n", ", ")
+        self.t_actors.ChangeValue(text)
 
     def OnPosterContextMenu(self, event):
         menu = wx.Menu()
