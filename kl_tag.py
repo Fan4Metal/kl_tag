@@ -105,6 +105,40 @@ def get_resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 
+class CharValidator(wx.Validator):
+    ''' Validates data as it is entered into the text controls. '''
+
+    def __init__(self, flag):
+        wx.Validator.__init__(self)
+        self.flag = flag
+        self.Bind(wx.EVT_CHAR, self.OnChar)
+
+    def Clone(self):
+        '''Required Validator method'''
+        return CharValidator(self.flag)
+
+    def Validate(self, win):
+        return True
+
+    def TransferToWindow(self):
+        return True
+
+    def TransferFromWindow(self):
+        return True
+
+    def OnChar(self, event):
+        keycode = int(event.GetKeyCode())
+        if keycode < 256:
+            #print keycode
+            key = chr(keycode)
+            #print key
+            if self.flag == 'no-alpha' and key.isalpha():
+                return
+            if self.flag == 'no-digit' and key.isdigit():
+                return
+        event.Skip()
+
+
 class MyFrame(wx.Frame):
 
     def __init__(self, parent, title):
@@ -149,7 +183,7 @@ class MyFrame(wx.Frame):
         self.l_director = wx.StaticText(self.panel, label="Режиссер:", size=self.l_title.Size)
         self.t_director = wx.TextCtrl(self.panel, value="", size=self.t_country.Size)
         self.l_kpid = wx.StaticText(self.panel, label="Kinopoisk ID:")
-        self.t_kpid = wx.TextCtrl(self.panel, value="", size=(140, 28))
+        self.t_kpid = wx.TextCtrl(self.panel, value="", size=(140, 28), validator=CharValidator('no-alpha'))
         self.t_kpid.Bind(wx.EVT_TEXT, self.OnKPIDChange)
         self.tag_box_director = wx.BoxSizer(orient=wx.HORIZONTAL)
 
