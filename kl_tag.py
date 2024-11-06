@@ -52,14 +52,18 @@ def read_from_buffer():
 
 def get_from_buffer():
     try:
-        text = read_from_buffer()
+        text: str = read_from_buffer()
         list = text.split('\n')
         title = re.findall(r"(.*)\s\(\d{4}\)", text)[0]
         year = list[list.index("Год производства") + 1]
         country = list[list.index("Страна") + 1]
         director = list[list.index("Режиссер") + 1]
         actors_start = list.index("В главных ролях") + 1
-        actors_stop = list.index("В главных ролях") + 11
+        for i in range(actors_start, len(list)):
+            if list[i][0].isdigit():  # ищем следующую строку типа `15 актеров`
+                actors_stop = i
+                break
+        # actors_stop = list.fi("В главных ролях") + 11
         actors = list[actors_start:actors_stop]
         if re.findall(r"Рейтинг Кинопоиска\s(\d+\.\d+)", text):
             rating = re.findall(r"Рейтинг Кинопоиска\s(\d+\.\d+)", text)[0]
@@ -77,7 +81,8 @@ def get_from_buffer():
         result['rating'] = rating
         result['description'] = desc
         return result
-    except:
+    except Exception as e:
+        print(e)
         return
 
 
