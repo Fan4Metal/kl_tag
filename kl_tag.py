@@ -40,6 +40,46 @@ class Mp4TagsClass:
     is_ok: bool
 
 
+def read_from_buffer():
+    text_data = wx.TextDataObject()
+    if wx.TheClipboard.Open():
+        success = wx.TheClipboard.GetData(text_data)
+        wx.TheClipboard.Close()
+    if success:
+        return text_data.GetText()
+
+
+def get_from_buffer():
+    try:
+        text = read_from_buffer()
+        list = text.split('\n')
+        title = re.findall(r"(.*)\s\(\d{4}\)", text)[0]
+        year = list[list.index("Год производства") + 1]
+        country = list[list.index("Страна") + 1]
+        director = list[list.index("Режиссер") + 1]
+        actors_start = list.index("В главных ролях") + 1
+        actors_stop = list.index("В главных ролях") + 11
+        actors = list[actors_start:actors_stop]
+        if re.findall(r"Рейтинг Кинопоиска\s(\d+\.\d+)", text):
+            rating = re.findall(r"Рейтинг Кинопоиска\s(\d+\.\d+)", text)[0]
+        else:
+            rating = ""
+        desc_start = list.index("Видно только вам") + 1
+        desc_stop = list.index("Рейтинг фильма")
+        desc = "\n".join(list[desc_start:desc_stop]).strip("\n")
+        result = {}
+        result['title'] = title
+        result['year'] = year
+        result['country'] = country
+        result['director'] = director
+        result['actors'] = actors
+        result['rating'] = rating
+        result['description'] = desc
+        return result
+    except:
+        return
+
+
 def image_to_file(image):
     """Return `image` as PNG file-like object."""
     image_file = io.BytesIO()
@@ -131,7 +171,9 @@ class MyFrame(wx.Frame):
         self.image = wx.StaticBitmap(self.panel, wx.ID_ANY, self.scale_picture(self.placeholder), size=self.FromDIP((200, 300)))
         self.image.Bind(wx.EVT_CONTEXT_MENU, self.OnPosterContextMenu)
         self.l_image_size = wx.StaticText(self.panel, label="Нет постера")
-        self.b_save = wx.Button(self.panel, wx.ID_OK, label="Записать в файл", size=self.FromDIP((100, 25)))
+        self.b_paste = wx.Button(self.panel, wx.ID_ANY, label="Вставить из буфера", size=self.FromDIP((100, 25)))
+        self.Bind(wx.EVT_BUTTON, self.onPaste, id=self.b_paste.GetId())
+        self.b_save = wx.Button(self.panel, wx.ID_ANY, label="Записать в файл", size=self.FromDIP((100, 25)))
         self.Bind(wx.EVT_BUTTON, self.onSaveTags, id=self.b_save.GetId())
 
         self.box1_h = wx.BoxSizer(orient=wx.HORIZONTAL)
@@ -139,6 +181,7 @@ class MyFrame(wx.Frame):
         self.box1_h.Add(self.list_files, flag=wx.EXPAND | wx.TOP | wx.BOTTOM | wx.LEFT, border=10)
         self.box2_v.Add(self.image, proportion=0, flag=wx.EXPAND, border=10)
         self.box2_v.Add(self.l_image_size, proportion=0, flag=wx.ALIGN_CENTER)
+        self.box2_v.Add(self.b_paste, proportion=0, flag=wx.EXPAND | wx.TOP | wx.BOTTOM | wx.LEFT | wx.RIGHT, border=10)
         self.box2_v.AddStretchSpacer(prop=1)
         self.box2_v.Add(self.b_save, proportion=0, flag=wx.EXPAND | wx.TOP | wx.BOTTOM | wx.LEFT | wx.RIGHT, border=10)
 
@@ -149,6 +192,20 @@ class MyFrame(wx.Frame):
         self.list_paths = []
         self.tags: Mp4TagsClass
         self.OpenFiles()
+
+    def onPaste(self, event):
+        result = get_from_buffer()
+        if not result:
+            return
+        self.tags.title = result['title']
+        self.tags.year = result['year']
+        self.tags.country = result['country'].split(", ")
+        self.tags.rating = result['rating']
+        self.tags.directors = result['director'].split(", ")
+        self.tags.kpid = ""
+        self.tags.actors = result['actors']
+        self.tags.description = result['description']
+        self.ShowTags()
 
     def ReadTags(self, file_path) -> Mp4TagsClass | None:
         result = Mp4TagsClass("", "", "", "", "", "", "", "", "", "", False, False)
