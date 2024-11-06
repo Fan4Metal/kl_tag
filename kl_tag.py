@@ -202,7 +202,6 @@ class MyFrame(wx.Frame):
         self.tags.country = result['country'].split(", ")
         self.tags.rating = result['rating']
         self.tags.directors = result['director'].split(", ")
-        self.tags.kpid = ""
         self.tags.actors = result['actors']
         self.tags.description = result['description']
         self.ShowTags()
@@ -215,60 +214,39 @@ class MyFrame(wx.Frame):
             log.error(f"Ошибка! Не удалось открыть файл ({error}): {os.path.basename(file_path)}")
             return result
 
-        try:
-            if video["\xa9nam"][0]:
-                result.title = video["\xa9nam"][0]
-            else:
-                result.title = ""
-        except:
+        if "\xa9nam" in video:
+            result.title = video["\xa9nam"][0]
+        else:
             result.title = ""
 
-        try:
-            if video["\xa9day"][0]:
-                result.year = video["\xa9day"][0]
-            else:
-                result.year = ""
-        except:
+        if "\xa9day" in video:
+            result.year = video["\xa9day"][0]
+        else:
             result.year = ""
 
-        try:
-            if video["----:com.apple.iTunes:kpra"][0].decode():
-                result.rating = video["----:com.apple.iTunes:kpra"][0].decode()
-            else:
-                result.rating = ""
-        except:
+        if "----:com.apple.iTunes:kpra" in video:
+            result.rating = video["----:com.apple.iTunes:kpra"][0].decode()
+        else:
             result.rating = ""
 
-        try:
-            if video["----:com.apple.iTunes:countr"][0].decode().split(";"):
-                result.country = video["----:com.apple.iTunes:countr"][0].decode().split(";")
-            else:
-                result.country = ""
-        except:
+        if "----:com.apple.iTunes:countr" in video:
+            result.country = video["----:com.apple.iTunes:countr"][0].decode().split(";")
+        else:
             result.country = ""
 
-        try:
-            if video["desc"][0]:
-                result.description = video["desc"][0]
-            else:
-                result.description = ""
-        except:
+        if "desc" in video:
+            result.description = video["desc"][0]
+        else:
             result.description = ""
 
-        try:
-            if video["----:com.apple.iTunes:DIRECTOR"][0].decode().split(";"):
-                result.directors = video["----:com.apple.iTunes:DIRECTOR"][0].decode().split(";")
-            else:
-                result.directors = ""
-        except:
+        if "----:com.apple.iTunes:DIRECTOR" in video:
+            result.directors = video["----:com.apple.iTunes:DIRECTOR"][0].decode().split(";")
+        else:
             result.directors = ""
 
-        try:
-            if video["----:com.apple.iTunes:Actors"][0].decode().split("\r\n")[1::2]:
-                result.actors = video["----:com.apple.iTunes:Actors"][0].decode().split("\r\n")[1::2]
-            else:
-                result.actors = ""
-        except:
+        if "----:com.apple.iTunes:Actors" in video:
+            result.actors = video["----:com.apple.iTunes:Actors"][0].decode().split("\r\n")[1::2]
+        else:
             result.actors = ""
 
         try:
@@ -282,12 +260,9 @@ class MyFrame(wx.Frame):
             result.cover = self.placeholder
             result.has_cover = False
 
-        try:
-            if video["----:com.apple.iTunes:kpid"][0].decode():
-                result.kpid = video["----:com.apple.iTunes:kpid"][0].decode()
-            else:
-                result.kpid = ""
-        except:
+        if "----:com.apple.iTunes:kpid" in video:
+            result.kpid = video["----:com.apple.iTunes:kpid"][0].decode()
+        else:
             result.kpid = ""
 
         result.is_ok = True
