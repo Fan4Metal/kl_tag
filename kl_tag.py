@@ -6,6 +6,7 @@ import io
 import re
 from dataclasses import dataclass
 from glob import glob
+import webbrowser
 
 import wx
 import wx.adv
@@ -144,6 +145,7 @@ class MyFrame(wx.Frame):
         self.t_director = wx.TextCtrl(self.panel, value="", size=self.t_country.Size)
         self.l_kpid = wx.StaticText(self.panel, label="Kinopoisk ID:")
         self.t_kpid = wx.TextCtrl(self.panel, value="", size=(140, 28))
+        self.t_kpid.Bind(wx.EVT_TEXT, self.OnKPIDChange)
         self.tag_box_director = wx.BoxSizer(orient=wx.HORIZONTAL)
 
         self.tag_box_director.Add(self.l_director, flag=wx.ALIGN_CENTER | wx.RIGHT, border=10)
@@ -173,6 +175,8 @@ class MyFrame(wx.Frame):
         self.l_image_size = wx.StaticText(self.panel, label="Нет постера")
         self.b_paste = wx.Button(self.panel, wx.ID_ANY, label="Вставить из буфера", size=self.FromDIP((100, 25)))
         self.Bind(wx.EVT_BUTTON, self.onPaste, id=self.b_paste.GetId())
+        self.b_openkp = wx.Button(self.panel, wx.ID_ANY, label="Открыть на Кинопоиске", size=self.FromDIP((100, 25)))
+        self.Bind(wx.EVT_BUTTON, self.OpenOnKPClick, id=self.b_openkp.GetId())
         self.b_save = wx.Button(self.panel, wx.ID_ANY, label="Записать в файл", size=self.FromDIP((100, 25)))
         self.Bind(wx.EVT_BUTTON, self.onSaveTags, id=self.b_save.GetId())
 
@@ -182,6 +186,7 @@ class MyFrame(wx.Frame):
         self.box2_v.Add(self.image, proportion=0, flag=wx.EXPAND, border=10)
         self.box2_v.Add(self.l_image_size, proportion=0, flag=wx.ALIGN_CENTER)
         self.box2_v.Add(self.b_paste, proportion=0, flag=wx.EXPAND | wx.TOP | wx.BOTTOM | wx.LEFT | wx.RIGHT, border=10)
+        self.box2_v.Add(self.b_openkp, proportion=0, flag=wx.EXPAND | wx.TOP | wx.BOTTOM | wx.LEFT | wx.RIGHT, border=10)
         self.box2_v.AddStretchSpacer(prop=1)
         self.box2_v.Add(self.b_save, proportion=0, flag=wx.EXPAND | wx.TOP | wx.BOTTOM | wx.LEFT | wx.RIGHT, border=10)
 
@@ -507,6 +512,16 @@ class MyFrame(wx.Frame):
         self.t_year.Enable()
         self.b_save.Enable()
         self.choice.Enable()
+
+    def OpenOnKPClick(self, event):
+        if self.t_kpid.GetValue():
+            webbrowser.open(f'https://www.kinopoisk.ru/film/{self.t_kpid.GetValue()}/')
+
+    def OnKPIDChange(self, event):
+        if not self.t_kpid.GetValue():
+            self.b_openkp.Disable()
+        else:
+            self.b_openkp.Enable()
 
 
 def main():
