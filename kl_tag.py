@@ -88,7 +88,7 @@ class MyFrame(wx.Frame):
 
         self.l_rating = wx.StaticText(self.panel, label="Рейтинг:")
         self.t_rating = wx.TextCtrl(self.panel, value="", size=(50, 28))
-        self.choice = wx.Choice(self.panel, choices=["Кинопоиск", "IMDB"])
+        self.choice = wx.Choice(self.panel, choices=["Кинопоиск", "IMDb"])
         self.choice.SetSelection(0)
 
         self.tag_box_country = wx.BoxSizer(orient=wx.HORIZONTAL)
