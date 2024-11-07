@@ -13,9 +13,11 @@ import wx.adv
 from mutagen.mp4 import MP4, MP4Cover, MP4StreamInfoError, MP4FreeForm, AtomDataType
 from PIL import Image
 
+from kinopoisk import get_film_info
+
 ctypes.windll.shcore.SetProcessDpiAwareness(2)
 
-VER = "0.1.2"
+VER = "0.2.0"
 
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s', datefmt='%d.%m.%Y %H:%M:%S')
 log = logging.getLogger("KL Tag")
@@ -185,6 +187,7 @@ class MyFrame(wx.Frame):
         self.l_kpid = wx.StaticText(self.panel, label="Kinopoisk ID:")
         self.t_kpid = wx.TextCtrl(self.panel, value="", size=(140, 28), validator=CharValidator('no-alpha'))
         self.t_kpid.Bind(wx.EVT_TEXT, self.OnKPIDChange)
+        self.t_kpid.Bind(wx.EVT_TEXT_PASTE, self.OnKPIDPaste)
         self.tag_box_director = wx.BoxSizer(orient=wx.HORIZONTAL)
 
         self.tag_box_director.Add(self.l_director, flag=wx.ALIGN_CENTER | wx.RIGHT, border=10)
@@ -216,6 +219,8 @@ class MyFrame(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.onPaste, id=self.b_paste.GetId())
         self.b_openkp = wx.Button(self.panel, wx.ID_ANY, label="Открыть на Кинопоиске", size=self.FromDIP((100, 25)))
         self.Bind(wx.EVT_BUTTON, self.OpenOnKPClick, id=self.b_openkp.GetId())
+        self.b_loadkp = wx.Button(self.panel, wx.ID_ANY, label="Загрузить из Кинопоиска", size=self.FromDIP((100, 25)))
+        self.Bind(wx.EVT_BUTTON, self.LoadKP, id=self.b_loadkp.GetId())
         self.b_save = wx.Button(self.panel, wx.ID_ANY, label="Записать в файл", size=self.FromDIP((100, 25)))
         self.Bind(wx.EVT_BUTTON, self.onSaveTags, id=self.b_save.GetId())
 
@@ -225,6 +230,7 @@ class MyFrame(wx.Frame):
         self.box2_v.Add(self.image, proportion=0, flag=wx.EXPAND, border=10)
         self.box2_v.Add(self.l_image_size, proportion=0, flag=wx.ALIGN_CENTER)
         self.box2_v.Add(self.b_paste, proportion=0, flag=wx.EXPAND | wx.TOP | wx.BOTTOM | wx.LEFT | wx.RIGHT, border=10)
+        self.box2_v.Add(self.b_loadkp, proportion=0, flag=wx.EXPAND | wx.TOP | wx.BOTTOM | wx.LEFT | wx.RIGHT, border=10)
         self.box2_v.Add(self.b_openkp, proportion=0, flag=wx.EXPAND | wx.TOP | wx.BOTTOM | wx.LEFT | wx.RIGHT, border=10)
         self.box2_v.AddStretchSpacer(prop=1)
         self.box2_v.Add(self.b_save, proportion=0, flag=wx.EXPAND | wx.TOP | wx.BOTTOM | wx.LEFT | wx.RIGHT, border=10)
@@ -328,6 +334,7 @@ class MyFrame(wx.Frame):
             self.choice.SetSelection(0)
         self.t_director.ChangeValue(", ".join(self.tags.directors))
         self.t_kpid.ChangeValue(self.tags.kpid)
+        self.check_kpid()
         self.t_actors.ChangeValue(", ".join(self.tags.actors))  # doesn't generate wx.EVT_TEXT
         self.t_description.ChangeValue(self.tags.description)
         self.ShowPoster()
@@ -356,7 +363,6 @@ class MyFrame(wx.Frame):
         self.tags.kpid = self.t_kpid.Value
         self.tags.actors = self.t_actors.Value.split(", ")
         self.tags.description = self.t_description.Value
-        # self.tags.cover = self.placeholder
 
     def OpenFiles(self):
         if len(sys.argv) != 2:
@@ -557,10 +563,61 @@ class MyFrame(wx.Frame):
             webbrowser.open(f'https://www.kinopoisk.ru/film/{self.t_kpid.GetValue()}/')
 
     def OnKPIDChange(self, event):
+        self.check_kpid()
+
+    def check_kpid(self):
         if not self.t_kpid.GetValue():
             self.b_openkp.Disable()
+            self.b_loadkp.Disable()
         else:
             self.b_openkp.Enable()
+            self.b_loadkp.Enable()
+
+    def LoadKP(self, event):
+        try:
+            film_id = int(self.t_kpid.GetValue())
+        except Exception as e:
+            print(e)
+            return
+        self.tags.kpid = self.t_kpid.GetValue()
+
+        film_info = get_film_info(film_id)
+        if not film_info:
+            return
+
+        self.tags.title = film_info['title']
+        self.tags.year = film_info['year']
+        self.tags.country = film_info['country']
+        if film_info['rating'] and film_info['is_rating_kp']:
+            self.tags.rating = film_info['rating']
+        elif not film_info['is_rating_kp'] and film_info['rating']:
+            self.tags.rating = "i" + film_info['rating']
+        else:
+            self.tags.rating = film_info['rating']
+        self.tags.directors = film_info['director']
+        self.tags.actors = film_info['actors']
+        self.tags.description = film_info['description']
+        if film_info['cover']:
+            cover = film_info['cover']
+            cover = self.image_cut(cover)
+            cover = cover.convert("RGB")
+            self.tags.cover = cover
+            self.tags.has_cover = True
+        else:
+            self.tags.cover = ""
+            self.tags.has_cover = False
+        self.ShowTags()
+        self.ShowPoster()
+
+    def OnKPIDPaste(self, event):
+        text = read_from_buffer().strip(" \n")
+        id = re.search(r"KP~(\d+)", text)
+        if id:
+            self.t_kpid.ChangeValue(id.group(1))
+            self.check_kpid()
+            return
+        self.t_kpid.ChangeValue(text)
+        self.check_kpid()
 
 
 def main():
