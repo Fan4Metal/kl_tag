@@ -54,34 +54,32 @@ def read_from_buffer():
 
 def get_from_buffer():
     try:
+        result = {}
         text: str = read_from_buffer()
         list = text.split('\n')
-        title = re.findall(r"(.*)\s\(\d{4}\)", text)[0]
-        year = list[list.index("Год производства") + 1]
-        country = list[list.index("Страна") + 1]
-        director = list[list.index("Режиссер") + 1]
+        result['title'] = re.findall(r"(.*)\s\(\d{4}\)", text)[0]
+        result['year'] = list[list.index("Год производства") + 1]
+        result['country'] = list[list.index("Страна") + 1].split(', ')
+        result['director'] = list[list.index("Режиссер") + 1].split(', ')
         actors_start = list.index("В главных ролях") + 1
         for i in range(actors_start, len(list)):
             if list[i][0].isdigit():  # ищем следующую строку типа `15 актеров`
                 actors_stop = i
                 break
         # actors_stop = list.fi("В главных ролях") + 11
-        actors = list[actors_start:actors_stop]
+        result['actors'] = list[actors_start:actors_stop]
         if re.findall(r"Рейтинг Кинопоиска\s(\d+\.\d+)", text):
-            rating = re.findall(r"Рейтинг Кинопоиска\s(\d+\.\d+)", text)[0]
+            result['rating'] = re.findall(r"Рейтинг Кинопоиска\s(\d+\.\d+)", text)[0]
+            result['is_rating_kp'] = True
+        elif re.findall(r"IMDb:\s(\d\.\d{2})", text):
+            result['rating'] = re.findall(r"IMDb:\s(\d\.\d{2})", text)[0]
+            result['is_rating_kp'] = False
         else:
-            rating = ""
+            result['rating'] = ""
+            result['is_rating_kp'] = True
         desc_start = list.index("Видно только вам") + 1
         desc_stop = list.index("Рейтинг фильма")
-        desc = "\n".join(list[desc_start:desc_stop]).strip("\n")
-        result = {}
-        result['title'] = title
-        result['year'] = year
-        result['country'] = country
-        result['director'] = director
-        result['actors'] = actors
-        result['rating'] = rating
-        result['description'] = desc
+        result['description'] = "\n".join(list[desc_start:desc_stop]).strip("\n")
         return result
     except Exception as e:
         print(e)
@@ -244,16 +242,21 @@ class MyFrame(wx.Frame):
         self.OpenFiles()
 
     def onPaste(self, event):
-        result = get_from_buffer()
-        if not result:
+        film_info = get_from_buffer()
+        if not film_info:
             return
-        self.tags.title = result['title']
-        self.tags.year = result['year']
-        self.tags.country = result['country'].split(", ")
-        self.tags.rating = result['rating']
-        self.tags.directors = result['director'].split(", ")
-        self.tags.actors = result['actors']
-        self.tags.description = result['description']
+        self.tags.title = film_info['title']
+        self.tags.year = film_info['year']
+        self.tags.country = film_info['country']
+        if film_info['rating'] and film_info['is_rating_kp']:
+            self.tags.rating = film_info['rating']
+        elif not film_info['is_rating_kp'] and film_info['rating']:
+            self.tags.rating = "i" + film_info['rating']
+        else:
+            self.tags.rating = film_info['rating']
+        self.tags.directors = film_info['director']
+        self.tags.actors = film_info['actors']
+        self.tags.description = film_info['description']
         self.ShowTags()
 
     def ReadTags(self, file_path) -> Mp4TagsClass | None:
