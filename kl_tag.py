@@ -17,7 +17,7 @@ from kinopoisk import get_film_info
 
 ctypes.windll.shcore.SetProcessDpiAwareness(2)
 
-VER = "0.2.1"
+VER = "0.2.2"
 
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s', datefmt='%d.%m.%Y %H:%M:%S')
 log = logging.getLogger("KL Tag")
