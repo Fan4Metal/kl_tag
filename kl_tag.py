@@ -77,7 +77,12 @@ def get_from_buffer():
         else:
             result['rating'] = ""
             result['is_rating_kp'] = True
-        desc_start = list.index("Видно только вам") + 1
+
+        try:
+            desc_start = list.index("Видно только вам") + 1
+        except Exception as e:
+            desc_start = list.index("Сиквелы, приквелы и ремейки") + 1
+
         desc_stop = list.index("Рейтинг фильма")
         result['description'] = "\n".join(list[desc_start:desc_stop]).strip("\n")
         return result
