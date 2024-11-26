@@ -178,13 +178,13 @@ class MyFrame(wx.Frame):
 
         self.tag_box_country = wx.BoxSizer(orient=wx.HORIZONTAL)
         self.tag_box_country.Add(self.l_country, flag=wx.ALIGN_CENTER | wx.RIGHT, border=10)
-        self.tag_box_country.Add(self.t_country, proportion=1, flag=wx.ALIGN_CENTER | wx.RIGHT, border=10)
+        self.tag_box_country.Add(self.t_country, proportion=1, flag=wx.EXPAND | wx.RIGHT, border=10)
         self.tag_box_country.Add(self.l_rating, flag=wx.ALIGN_CENTER | wx.RIGHT, border=10)
-        self.tag_box_country.Add(self.t_rating, flag=wx.ALIGN_CENTER | wx.RIGHT, border=10)
+        self.tag_box_country.Add(self.t_rating, flag=wx.EXPAND | wx.RIGHT, border=10)
         self.tag_box_country.Add(self.choice, flag=wx.ALIGN_CENTER)
         self.tag_box_sizer.Add(self.tag_box_country, flag=wx.EXPAND | wx.TOP | wx.BOTTOM | wx.LEFT, border=10)
 
-        # director
+        # director & kpid
         self.l_director = wx.StaticText(self.panel, label="Режиссер:", size=self.l_title.Size)
         self.t_director = wx.TextCtrl(self.panel, value="", size=self.t_country.Size)
         self.l_kpid = wx.StaticText(self.panel, label="Kinopoisk ID:")
@@ -196,7 +196,7 @@ class MyFrame(wx.Frame):
         self.tag_box_director.Add(self.l_director, flag=wx.ALIGN_CENTER | wx.RIGHT, border=10)
         self.tag_box_director.Add(self.t_director, proportion=1, flag=wx.ALIGN_CENTER | wx.RIGHT, border=10)
         self.tag_box_director.Add(self.l_kpid, flag=wx.ALIGN_CENTER | wx.RIGHT, border=10)
-        self.tag_box_director.Add(self.t_kpid, flag=wx.ALIGN_CENTER)
+        self.tag_box_director.Add(self.t_kpid, flag=wx.EXPAND)
         self.tag_box_sizer.Add(self.tag_box_director, flag=wx.EXPAND | wx.TOP | wx.BOTTOM | wx.LEFT, border=10)
 
         # actors
