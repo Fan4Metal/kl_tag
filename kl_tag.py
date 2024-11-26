@@ -484,9 +484,12 @@ class MyFrame(wx.Frame):
             width, height = image.size
             return wx.Bitmap.FromBuffer(width, height, image.tobytes())
 
-        bmp_source = wx.Bitmap(PIL2wx(picture))
+        bmp_source = PIL2wx(picture)
+        bmp_source.SetScaleFactor(self.GetDPIScaleFactor())
         image = bmp_source.ConvertToImage()
-        return wx.Bitmap(image.Scale(self.FromDIP(200), self.FromDIP(300)))
+        new_width, new_height = self.FromDIP((200, 300))
+        image = image.Scale(new_width, new_height, quality=wx.IMAGE_QUALITY_HIGH)
+        return image
 
     @staticmethod
     def image_cut(image: Image.Image):
