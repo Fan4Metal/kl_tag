@@ -4,9 +4,11 @@ import ctypes
 import logging
 import io
 import re
+import webbrowser
+import json
 from dataclasses import dataclass
 from glob import glob
-import webbrowser
+from subprocess import check_output
 
 import wx
 import wx.adv
@@ -17,7 +19,7 @@ from kinopoisk import get_film_info
 
 ctypes.windll.shcore.SetProcessDpiAwareness(2)
 
-VER = "0.2.2"
+VER = "0.2.3-beta"
 
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s', datefmt='%d.%m.%Y %H:%M:%S')
 log = logging.getLogger("KL Tag")
@@ -25,6 +27,35 @@ log = logging.getLogger("KL Tag")
 wildcard_pics = "Изображения (*.png;*.jpg;*.jpeg;*.webp)|*.png;*.jpg;*.jpeg;*.webp|"\
             "Все файлы (*.*)|*.*"
 wildcard_png = "Изображения (*.png)|*.png|Все файлы (*.*)|*.*"
+
+
+def convert_bytes(num, is_speed=False):
+    for x in ['б', 'Кб', 'Мб', 'Гб', 'Тб']:
+        if num < 1024.0:
+            if is_speed:
+                return f'{num:3.1f} {x}/с'
+            else:
+                return f'{num:3.1f} {x}'
+        num /= 1024.0
+
+
+def get_meta(file):
+    ffprobe = get_resource_path("ffprobe.exe")
+    command = '{ffprobe} -v quiet -print_format json -show_format -show_streams "{file}"'
+    output = check_output(command.format(ffprobe=ffprobe, file=file), shell=True).decode()
+    out_json = json.loads(output)
+    audio_streams = 0
+    for strem in out_json['streams']:
+        if strem['codec_type'] == 'audio':
+            audio_streams += 1
+
+    result = {}
+    result['width'] = out_json['streams'][0]['width']
+    result['height'] = out_json['streams'][0]['height']
+    result['size'] = convert_bytes(int(out_json['format']['size']))
+    result['bit_rate'] = convert_bytes(int(out_json['format']['bit_rate']), is_speed=True)
+    result['audio_streams'] = audio_streams
+    return result
 
 
 @dataclass
@@ -242,6 +273,10 @@ class MyFrame(wx.Frame):
         self.box1_h.Add(self.box2_v, proportion=0, flag=wx.EXPAND | wx.TOP | wx.BOTTOM | wx.LEFT | wx.RIGHT, border=10)
         self.panel.SetSizer(self.box1_h)
 
+        self.statusbar = self.CreateStatusBar(2, style=(wx.BORDER_DEFAULT) & ~(wx.STB_SHOW_TIPS))
+        self.statusbar.SetStatusWidths([self.FromDIP(350), -1])
+        self.statusbar.SetStatusText("")
+
         self.list_paths = []
         self.tags: Mp4TagsClass
         self.OpenFiles()
@@ -345,6 +380,7 @@ class MyFrame(wx.Frame):
         self.check_kpid()
         self.t_actors.ChangeValue(", ".join(self.tags.actors))  # doesn't generate wx.EVT_TEXT
         self.t_description.ChangeValue(self.tags.description)
+        self.ShowStatusbar()
         self.ShowPoster()
 
     def ShowPoster(self):
@@ -356,6 +392,13 @@ class MyFrame(wx.Frame):
             self.image.Bitmap = self.scale_picture(self.placeholder)
             self.l_image_size.Label = "Нет постера"
             self.panel.Layout()
+
+    def ShowStatusbar(self):
+        self.statusbar.SetStatusText(" Файлов: " + str(len(self.list_paths)), 0)
+        fileinfo = get_meta(self.list_paths[self.list_files.GetSelection()])
+        self.statusbar.SetStatusText(
+            " Размер: " + fileinfo['size'] + ", битрейт: " + fileinfo['bit_rate'] + ", разрешение: " + str(fileinfo['width']) + "×" +
+            str(fileinfo['height']) + ", аудиотреков: " + str(fileinfo['audio_streams']), 1)
 
     def GetTags(self):
         self.tags.title = self.t_title.Value
@@ -377,6 +420,7 @@ class MyFrame(wx.Frame):
             self.tags = Mp4TagsClass("", "", "", "", "", "", "", "", "", "", False, False)
             self.DisableInterface()
             return
+
         if os.path.isfile(sys.argv[1]):
             self.list_paths.append(sys.argv[1])
             self.list_files.AppendItems(os.path.basename(self.list_paths[0]))
