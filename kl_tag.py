@@ -257,7 +257,7 @@ class MyFrame(wx.Frame):
         self.b_openkp = wx.Button(self.panel, wx.ID_ANY, label="Открыть на Кинопоиске", size=self.FromDIP((100, 25)))
         self.Bind(wx.EVT_BUTTON, self.OpenOnKPClick, id=self.b_openkp.GetId())
         self.b_loadkp = wx.Button(self.panel, wx.ID_ANY, label="Загрузить из Кинопоиска", size=self.FromDIP((100, 25)))
-        self.Bind(wx.EVT_BUTTON, self.LoadKP, id=self.b_loadkp.GetId())
+        self.Bind(wx.EVT_BUTTON, self.onLoadKP, id=self.b_loadkp.GetId())
         self.b_save = wx.Button(self.panel, wx.ID_ANY, label="Записать в файл", size=self.FromDIP((100, 25)))
         self.Bind(wx.EVT_BUTTON, self.onSaveTags, id=self.b_save.GetId())
 
@@ -631,7 +631,7 @@ class MyFrame(wx.Frame):
             self.b_openkp.Enable()
             self.b_loadkp.Enable()
 
-    def LoadKP(self, event):
+    def onLoadKP(self, event):
         try:
             film_id = int(self.t_kpid.GetValue())
         except Exception as e:
