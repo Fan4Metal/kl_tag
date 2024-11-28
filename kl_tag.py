@@ -29,11 +29,11 @@ wildcard_pics = "Изображения (*.png;*.jpg;*.jpeg;*.webp)|*.png;*.jpg;
 wildcard_png = "Изображения (*.png)|*.png|Все файлы (*.*)|*.*"
 
 
-def convert_bytes(num, is_speed=False):
+def convert_bytes(num, is_rate=False):
     for x in ['б', 'Кб', 'Мб', 'Гб', 'Тб']:
         if num < 1024.0:
-            if is_speed:
-                return f'{num:3.1f} {x}/с'
+            if is_rate:
+                return f'{num:3.1f} {x}ит/с'
             else:
                 return f'{num:3.1f} {x}'
         num /= 1024.0
@@ -53,7 +53,7 @@ def get_meta(file):
     result['width'] = out_json['streams'][0]['width']
     result['height'] = out_json['streams'][0]['height']
     result['size'] = convert_bytes(int(out_json['format']['size']))
-    result['bit_rate'] = convert_bytes(int(out_json['format']['bit_rate']), is_speed=True)
+    result['bit_rate'] = convert_bytes(int(out_json['format']['bit_rate']), is_rate=True)
     result['audio_streams'] = audio_streams
     return result
 
