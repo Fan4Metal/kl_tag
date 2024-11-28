@@ -258,6 +258,8 @@ class MyFrame(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.OpenOnKPClick, id=self.b_openkp.GetId())
         self.b_loadkp = wx.Button(self.panel, wx.ID_ANY, label="Загрузить из Кинопоиска", size=self.FromDIP((100, 25)))
         self.Bind(wx.EVT_BUTTON, self.onLoadKP, id=self.b_loadkp.GetId())
+        self.b_opendir = wx.Button(self.panel, wx.ID_ANY, label="Открыть расположение", size=self.FromDIP((100, 25)))
+        self.Bind(wx.EVT_BUTTON, self.onOpenDir, id=self.b_opendir.GetId())
         self.b_save = wx.Button(self.panel, wx.ID_ANY, label="Записать в файл", size=self.FromDIP((100, 25)))
         self.Bind(wx.EVT_BUTTON, self.onSaveTags, id=self.b_save.GetId())
 
@@ -269,6 +271,7 @@ class MyFrame(wx.Frame):
         self.box2_v.Add(self.b_paste, proportion=0, flag=wx.EXPAND | wx.TOP | wx.BOTTOM | wx.LEFT | wx.RIGHT, border=10)
         self.box2_v.Add(self.b_loadkp, proportion=0, flag=wx.EXPAND | wx.TOP | wx.BOTTOM | wx.LEFT | wx.RIGHT, border=10)
         self.box2_v.Add(self.b_openkp, proportion=0, flag=wx.EXPAND | wx.TOP | wx.BOTTOM | wx.LEFT | wx.RIGHT, border=10)
+        self.box2_v.Add(self.b_opendir, proportion=0, flag=wx.EXPAND | wx.TOP | wx.BOTTOM | wx.LEFT | wx.RIGHT, border=10)
         self.box2_v.AddStretchSpacer(prop=1)
         self.box2_v.Add(self.b_save, proportion=0, flag=wx.EXPAND | wx.TOP | wx.BOTTOM | wx.LEFT | wx.RIGHT, border=10)
 
@@ -682,6 +685,11 @@ class MyFrame(wx.Frame):
             path = self.list_paths[self.list_files.GetSelection()]
             if os.path.isfile(path):
                 subprocess.Popen(f'"{path}"', shell=True)
+
+    def onOpenDir(self, event):
+        path = self.list_paths[self.list_files.GetSelection()]
+        if os.path.isfile(path):
+            subprocess.Popen(f'explorer /select,"{path}"', shell=True)
 
 
 def main():
