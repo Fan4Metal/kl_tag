@@ -6,6 +6,7 @@ import io
 import re
 import webbrowser
 import json
+import threading
 from dataclasses import dataclass
 from glob import glob
 from subprocess import check_output
@@ -380,7 +381,7 @@ class MyFrame(wx.Frame):
         self.check_kpid()
         self.t_actors.ChangeValue(", ".join(self.tags.actors))  # doesn't generate wx.EVT_TEXT
         self.t_description.ChangeValue(self.tags.description)
-        self.ShowStatusbar()
+        threading.Thread(target=self.ShowStatusbar).start()
         self.ShowPoster()
 
     def ShowPoster(self):
