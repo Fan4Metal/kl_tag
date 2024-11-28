@@ -183,7 +183,8 @@ class MyFrame(wx.Frame):
 
         self.panel = wx.Panel(self)
         self.list_files = wx.ListBox(self.panel, size=self.FromDIP(wx.Size(350, 30)))
-        self.Bind(wx.EVT_LISTBOX, self.ListClick, id=self.list_files.GetId())
+        self.Bind(wx.EVT_LISTBOX, self.onListClick, id=self.list_files.GetId())
+        self.Bind(wx.EVT_LISTBOX_DCLICK, self.onListDoubleClick, id=self.list_files.GetId())
         self.tag_box_sizer = wx.StaticBoxSizer(wx.VERTICAL, self.panel)
 
         # title + year
@@ -221,8 +222,8 @@ class MyFrame(wx.Frame):
         self.t_director = wx.TextCtrl(self.panel, value="", size=self.t_country.Size)
         self.l_kpid = wx.StaticText(self.panel, label="Kinopoisk ID:")
         self.t_kpid = wx.TextCtrl(self.panel, value="", size=(140, 28), validator=CharValidator('no-alpha'))
-        self.t_kpid.Bind(wx.EVT_TEXT, self.OnKPIDChange)
-        self.t_kpid.Bind(wx.EVT_TEXT_PASTE, self.OnKPIDPaste)
+        self.t_kpid.Bind(wx.EVT_TEXT, self.onKPIDChange)
+        self.t_kpid.Bind(wx.EVT_TEXT_PASTE, self.onKPIDPaste)
         self.tag_box_director = wx.BoxSizer(orient=wx.HORIZONTAL)
 
         self.tag_box_director.Add(self.l_director, flag=wx.ALIGN_CENTER | wx.RIGHT, border=10)
@@ -497,7 +498,7 @@ class MyFrame(wx.Frame):
             return False
         return True
 
-    def ListClick(self, event):
+    def onListClick(self, event):
         self.tags = self.ReadTags(self.list_paths[self.list_files.GetSelection()])
         if not self.tags.is_ok:
             self.ClearTags()
@@ -514,11 +515,11 @@ class MyFrame(wx.Frame):
     def OnPosterContextMenu(self, event):
         menu = wx.Menu()
         item1 = wx.MenuItem(menu, wx.ID_ANY, "Добавить постер")
-        self.Bind(wx.EVT_MENU, self.OnAddPoster, id=item1.GetId())
+        self.Bind(wx.EVT_MENU, self.onAddPoster, id=item1.GetId())
         item2 = wx.MenuItem(menu, wx.ID_ANY, "Сохранить постер")
-        self.Bind(wx.EVT_MENU, self.OnSavePoster, id=item2.GetId())
+        self.Bind(wx.EVT_MENU, self.onSavePoster, id=item2.GetId())
         item3 = wx.MenuItem(menu, wx.ID_ANY, "Удалить постер")
-        self.Bind(wx.EVT_MENU, self.OnDelPoster, id=item3.GetId())
+        self.Bind(wx.EVT_MENU, self.onDelPoster, id=item3.GetId())
 
         menu.Append(item1)
         if self.tags.has_cover:
@@ -552,7 +553,7 @@ class MyFrame(wx.Frame):
         image.thumbnail((360, 540))
         return image
 
-    def OnAddPoster(self, event):
+    def onAddPoster(self, event):
         with wx.FileDialog(self, "Открыть файл...", "", "", wildcard_pics, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as fileDialog:
             if fileDialog.ShowModal() == wx.ID_CANCEL:
                 return
@@ -564,7 +565,7 @@ class MyFrame(wx.Frame):
         self.tags.has_cover = True
         self.ShowPoster()
 
-    def OnSavePoster(self, event):
+    def onSavePoster(self, event):
         with wx.FileDialog(self, "Сохранить файл...", "", "", wildcard_png, style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as fileDialog:
             if fileDialog.ShowModal() == wx.ID_CANCEL:
                 return
@@ -572,7 +573,7 @@ class MyFrame(wx.Frame):
         if self.tags.has_cover:
             self.tags.cover.save(image_path)
 
-    def OnDelPoster(self, event):
+    def onDelPoster(self, event):
         self.tags.cover = ""
         self.tags.has_cover = False
         self.ShowPoster()
@@ -618,7 +619,7 @@ class MyFrame(wx.Frame):
         if self.t_kpid.GetValue():
             webbrowser.open(f'https://www.kinopoisk.ru/film/{self.t_kpid.GetValue()}/')
 
-    def OnKPIDChange(self, event):
+    def onKPIDChange(self, event):
         self.check_kpid()
 
     def check_kpid(self):
@@ -665,7 +666,7 @@ class MyFrame(wx.Frame):
         self.ShowTags()
         self.ShowPoster()
 
-    def OnKPIDPaste(self, event):
+    def onKPIDPaste(self, event):
         text = read_from_buffer().strip(" \n")
         id = re.search(r"KP~(\d+)", text)
         if id:
