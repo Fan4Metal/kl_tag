@@ -7,6 +7,7 @@ import re
 import webbrowser
 import json
 import threading
+import subprocess
 from dataclasses import dataclass
 from glob import glob
 from subprocess import check_output
@@ -675,6 +676,12 @@ class MyFrame(wx.Frame):
             return
         self.t_kpid.ChangeValue(text)
         self.check_kpid()
+
+    def onListDoubleClick(self, event):
+        if self.list_files.GetSelection() != wx.NOT_FOUND:
+            path = self.list_paths[self.list_files.GetSelection()]
+            if os.path.isfile(path):
+                subprocess.Popen(f'"{path}"', shell=True)
 
 
 def main():
