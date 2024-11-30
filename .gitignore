@@ -147,8 +147,14 @@ backup/
 *.txt
 *.zip
 list*
+*.py
+*.python
+*.reg
+*.exe
 
 # exlude
 !requirements.txt
 !freeze.txt
 !images/placeholder.png
+!kl_tag.py
+!kinopoisk.py
