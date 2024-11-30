@@ -24,7 +24,7 @@ ctypes.windll.shcore.SetProcessDpiAwareness(2)
 VER = "0.2.3"
 
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s', datefmt='%d.%m.%Y %H:%M:%S')
-log = logging.getLogger("KL Tag")
+log = logging.getLogger("KL_Tag")
 
 wildcard_pics = "Изображения (*.png;*.jpg;*.jpeg;*.webp)|*.png;*.jpg;*.jpeg;*.webp|"\
             "Все файлы (*.*)|*.*"
@@ -43,6 +43,9 @@ def convert_bytes(num, is_rate=False):
 
 def get_meta(file):
     ffprobe = get_resource_path("ffprobe.exe")
+    if not os.path.isfile(ffprobe):
+        log.error(f'Не наден файл: "{ffprobe}"!')
+        return
     command = '{ffprobe} -v quiet -print_format json -show_format -show_streams "{file}"'
     output = check_output(command.format(ffprobe=ffprobe, file=file), shell=True).decode()
     out_json = json.loads(output)
@@ -402,9 +405,10 @@ class MyFrame(wx.Frame):
     def ShowStatusbar(self):
         self.statusbar.SetStatusText(" Файлов: " + str(len(self.list_paths)), 0)
         fileinfo = get_meta(self.list_paths[self.list_files.GetSelection()])
-        self.statusbar.SetStatusText(
-            " Размер: " + fileinfo['size'] + ", битрейт: " + fileinfo['bit_rate'] + ", разрешение: " + str(fileinfo['width']) + "×" +
-            str(fileinfo['height']) + ", аудиотреков: " + str(fileinfo['audio_streams']), 1)
+        if fileinfo:
+            self.statusbar.SetStatusText(
+                " Размер: " + fileinfo['size'] + ", битрейт: " + fileinfo['bit_rate'] + ", разрешение: " + str(fileinfo['width']) + "×" +
+                str(fileinfo['height']) + ", аудиотреков: " + str(fileinfo['audio_streams']), 1)
 
     def GetTags(self):
         self.tags.title = self.t_title.Value
