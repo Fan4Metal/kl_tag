@@ -609,6 +609,10 @@ class MyFrame(wx.Frame):
         self.t_rating.Disable()
         self.t_year.Disable()
         self.b_save.Disable()
+        self.b_paste.Disable()
+        self.b_loadkp.Disable()
+        self.b_openkp.Disable()
+        self.b_opendir.Disable()
         self.choice.Disable()
 
     def EnableInterface(self):
@@ -621,6 +625,10 @@ class MyFrame(wx.Frame):
         self.t_rating.Enable()
         self.t_year.Enable()
         self.b_save.Enable()
+        self.b_paste.Enable()
+        self.b_loadkp.Enable()
+        self.b_openkp.Enable()
+        self.b_opendir.Enable()
         self.choice.Enable()
 
     def OpenOnKPClick(self, event):
