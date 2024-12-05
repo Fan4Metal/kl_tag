@@ -427,38 +427,29 @@ class MyFrame(wx.Frame):
 
     def OpenFiles(self):
         if len(sys.argv) != 2:
-            self.tags = Mp4TagsClass("", "", "", "", "", "", "", "", "", "", False, False)
             self.DisableInterface()
             return
 
         if os.path.isfile(sys.argv[1]):
             self.list_paths.append(sys.argv[1])
             self.list_files.AppendItems(os.path.basename(self.list_paths[0]))
-            self.list_files.Select(0)
-            self.tags = self.ReadTags(self.list_paths[self.list_files.GetSelection()])
-            if not self.tags.is_ok:
-                self.ClearTags()
-                self.DisableInterface()
-                return
-            self.EnableInterface()
-            self.ShowTags()
 
         if os.path.isdir(sys.argv[1]):
             self.list_paths = glob(os.path.join(sys.argv[1], "*.mp4"))
             if not self.list_paths:
-                self.tags = Mp4TagsClass("", "", "", "", "", "", "", "", "", "", False, False)
                 self.DisableInterface()
                 return
             for path in self.list_paths:
                 self.list_files.AppendItems(os.path.basename(path))
-            self.list_files.Select(0)
-            self.tags = self.ReadTags(self.list_paths[self.list_files.GetSelection()])
-            if not self.tags.is_ok:
-                self.ClearTags()
-                self.DisableInterface()
-                return
-            self.EnableInterface()
-            self.ShowTags()
+
+        self.list_files.Select(0)
+        self.tags = self.ReadTags(self.list_paths[self.list_files.GetSelection()])
+        if not self.tags.is_ok:
+            self.ClearTags()
+            self.DisableInterface()
+            return
+        self.EnableInterface()
+        self.ShowTags()
 
     def onSaveTags(self, event):
         self.GetTags()
