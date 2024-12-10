@@ -521,12 +521,15 @@ class MyFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.onDelPoster, id=item3.GetId())
 
         menu.Append(item1)
-        if self.tags.has_cover:
-            menu.Append(item2)
-            menu.AppendSeparator()
-            menu.Append(item3)
-        self.PopupMenu(menu)
-        menu.Destroy()
+        try:
+            if self.tags.has_cover:
+                menu.Append(item2)
+                menu.AppendSeparator()
+                menu.Append(item3)
+            self.PopupMenu(menu)
+            menu.Destroy()
+        except AttributeError as e:
+            return
 
     def scale_picture(self, picture: Image.Image):
 
