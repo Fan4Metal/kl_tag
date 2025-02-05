@@ -17,11 +17,11 @@ import wx.adv
 from mutagen.mp4 import MP4, MP4Cover, MP4StreamInfoError, MP4FreeForm, AtomDataType
 from PIL import Image
 
-from kinopoisk import get_film_info
+from kinopoisk import get_film_info, common_genres
 
 ctypes.windll.shcore.SetProcessDpiAwareness(2)
 
-VER = "0.2.3"
+VER = "0.2.4 Beta 1"
 
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s', datefmt='%d.%m.%Y %H:%M:%S')
 log = logging.getLogger("KL_Tag")
@@ -65,18 +65,18 @@ def get_meta(file):
 
 @dataclass
 class Mp4TagsClass:
-    title: str
-    kpid: str
-    year: str
-    country: list
-    rating: str
-    directors: list
-    actors: list
-    description: str
-    long_descriplion: str
-    cover: Image.Image | str
-    has_cover: bool
-    is_ok: bool
+    title: str = ""
+    kpid: str = ""
+    year: str = ""
+    country: list | str = ""
+    rating: str = ""
+    directors: list | str = ""
+    actors: list | str = ""
+    description: str = ""
+    long_descriplion: str = ""
+    has_cover: bool = False
+    genres: list | str = ""
+    main_genre: str = ""
 
 
 def read_from_buffer():
@@ -221,6 +221,19 @@ class MyFrame(wx.Frame):
         self.tag_box_country.Add(self.choice, flag=wx.ALIGN_CENTER)
         self.tag_box_sizer.Add(self.tag_box_country, flag=wx.EXPAND | wx.TOP | wx.BOTTOM | wx.LEFT, border=10)
 
+        # genres
+        self.l_genres = wx.StaticText(self.panel, label="Жанры:", size=self.l_title.Size)
+        self.t_genres = wx.TextCtrl(self.panel, value="", size=self.t_country.Size)
+        self.l_main_genre = wx.StaticText(self.panel, label="Основной жанр:")
+        self.c_main_genre = wx.ComboBox(self.panel, value="", choices=[], size=(140, 28), style=wx.CB_DROPDOWN)
+        self.tag_box_genres = wx.BoxSizer(orient=wx.HORIZONTAL)
+
+        self.tag_box_genres.Add(self.l_genres, flag=wx.ALIGN_CENTER | wx.RIGHT, border=10)
+        self.tag_box_genres.Add(self.t_genres, proportion=1, flag=wx.EXPAND | wx.RIGHT, border=10)
+        self.tag_box_genres.Add(self.l_main_genre, flag=wx.ALIGN_CENTER | wx.RIGHT, border=10)
+        self.tag_box_genres.Add(self.c_main_genre, proportion=0, flag=wx.EXPAND)
+        self.tag_box_sizer.Add(self.tag_box_genres, flag=wx.EXPAND | wx.TOP | wx.BOTTOM | wx.LEFT, border=10)
+
         # director & kpid
         self.l_director = wx.StaticText(self.panel, label="Режиссер:", size=self.l_title.Size)
         self.t_director = wx.TextCtrl(self.panel, value="", size=self.t_country.Size)
@@ -287,7 +300,7 @@ class MyFrame(wx.Frame):
         self.statusbar.SetStatusText("")
 
         self.list_paths = []
-        self.tags: Mp4TagsClass
+        self.tags = Mp4TagsClass()
         self.OpenFiles()
 
     def onPaste(self, event):
@@ -309,7 +322,7 @@ class MyFrame(wx.Frame):
         self.ShowTags()
 
     def ReadTags(self, file_path) -> Mp4TagsClass | None:
-        result = Mp4TagsClass("", "", "", "", "", "", "", "", "", "", False, False)
+        result = Mp4TagsClass()
         try:
             video = MP4(file_path)
         except Exception as error:
@@ -367,6 +380,16 @@ class MyFrame(wx.Frame):
         else:
             result.kpid = ""
 
+        if "----:com.apple.iTunes:genre" in video:
+            result.genres = video["----:com.apple.iTunes:genre"][0].decode().split(";")
+        else:
+            result.genres = ""
+
+        if "\xa9gen" in video:
+            result.main_genre = video["\xa9gen"][0]
+        else:
+            result.main_genre = ""
+
         result.is_ok = True
         return result
 
@@ -389,6 +412,9 @@ class MyFrame(wx.Frame):
         self.check_kpid()
         self.t_actors.ChangeValue(", ".join(self.tags.actors))  # doesn't generate wx.EVT_TEXT
         self.t_description.ChangeValue(self.tags.description)
+        self.t_genres.ChangeValue(", ".join(self.tags.genres))
+        self.c_main_genre.SetItems(self.tags.genres or common_genres)
+        self.c_main_genre.SetValue(self.tags.main_genre)
         threading.Thread(target=self.ShowStatusbar).start()
         self.ShowPoster()
 
@@ -424,6 +450,8 @@ class MyFrame(wx.Frame):
         self.tags.kpid = self.t_kpid.Value
         self.tags.actors = self.t_actors.Value.split(", ")
         self.tags.description = self.t_description.Value
+        self.tags.genres = self.t_genres.Value.split(", ")
+        self.tags.main_genre = self.c_main_genre.GetValue()
 
     def OpenFiles(self):
         if len(sys.argv) != 2:
@@ -489,6 +517,10 @@ class MyFrame(wx.Frame):
             video["----:com.apple.iTunes:countr"] = MP4FreeForm((";".join(self.tags.country)).encode(), AtomDataType.UTF8)
         if self.tags.kpid:
             video["----:com.apple.iTunes:kpid"] = MP4FreeForm((self.tags.kpid).encode(), AtomDataType.UTF8)
+        if self.tags.genres:
+            video["----:com.apple.iTunes:genre"] = MP4FreeForm((";".join(self.tags.genres)).encode(), AtomDataType.UTF8)
+        if self.tags.main_genre:
+            video["\xa9gen"] = self.tags.main_genre
         try:
             video.save()
         except Exception as error:
@@ -608,6 +640,8 @@ class MyFrame(wx.Frame):
         self.b_openkp.Disable()
         self.b_opendir.Disable()
         self.choice.Disable()
+        self.c_main_genre.Disable()
+        self.t_genres.Disable()
 
     def EnableInterface(self):
         self.t_title.Enable()
@@ -624,6 +658,8 @@ class MyFrame(wx.Frame):
         self.b_openkp.Enable()
         self.b_opendir.Enable()
         self.choice.Enable()
+        self.c_main_genre.Enable()
+        self.t_genres.Enable()
 
     def OpenOnKPClick(self, event):
         if self.t_kpid.GetValue():
@@ -664,6 +700,8 @@ class MyFrame(wx.Frame):
         self.tags.directors = film_info['director']
         self.tags.actors = film_info['actors']
         self.tags.description = film_info['description']
+        self.tags.genres = film_info['genres']
+        self.tags.main_genre = film_info['main_genre']
         if film_info['cover']:
             cover = film_info['cover']
             cover = self.image_cut(cover)
