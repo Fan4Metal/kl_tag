@@ -3,7 +3,7 @@ from PIL import Image
 
 from config import KINOPOISK_API_TOKEN as api
 
-__all__ = ['get_film_info', "genres_hierarchy", "common_genres"]
+__all__ = ["get_film_info", "get_main_genre", "genres_hierarchy", "common_genres"]
 
 genres_hierarchy = [
     "мультфильм",

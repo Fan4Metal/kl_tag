@@ -17,7 +17,7 @@ import wx.adv
 from mutagen.mp4 import MP4, MP4Cover, MP4StreamInfoError, MP4FreeForm, AtomDataType
 from PIL import Image
 
-from kinopoisk import get_film_info, common_genres
+from kinopoisk import get_film_info, get_main_genre, common_genres, genres_hierarchy
 
 ctypes.windll.shcore.SetProcessDpiAwareness(2)
 
@@ -97,13 +97,18 @@ def get_from_buffer():
         result['year'] = list[list.index("Год производства") + 1]
         result['country'] = list[list.index("Страна") + 1].split(', ')
         result['director'] = list[list.index("Режиссер") + 1].split(', ')
+
         actors_start = list.index("В главных ролях") + 1
         for i in range(actors_start, len(list)):
             if list[i][0].isdigit():  # ищем следующую строку типа `15 актеров`
                 actors_stop = i
                 break
-        # actors_stop = list.fi("В главных ролях") + 11
+
         result['actors'] = list[actors_start:actors_stop]
+        genres_start = list.index("Жанр") + 1
+        result['genres'] = list[genres_start].split(', ')
+        result['main_genre'] = get_main_genre(result['genres'], genres_hierarchy)
+
         if re.findall(r"Рейтинг Кинопоиска\s(\d+\.\d+)", text):
             result['rating'] = re.findall(r"Рейтинг Кинопоиска\s(\d+\.\d+)", text)[0]
             result['is_rating_kp'] = True
@@ -121,6 +126,7 @@ def get_from_buffer():
 
         desc_stop = list.index("Рейтинг фильма")
         result['description'] = "\n".join(list[desc_start:desc_stop]).strip("\n")
+
         return result
     except Exception as e:
         print(e)
@@ -319,6 +325,8 @@ class MyFrame(wx.Frame):
         self.tags.directors = film_info['director']
         self.tags.actors = film_info['actors']
         self.tags.description = film_info['description']
+        self.tags.genres = film_info['genres']
+        self.tags.main_genre = film_info['main_genre']
         self.ShowTags()
 
     def ReadTags(self, file_path) -> Mp4TagsClass | None:
