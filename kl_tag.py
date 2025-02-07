@@ -189,7 +189,7 @@ class CharValidator(wx.Validator):
 class MyFrame(wx.Frame):
 
     def __init__(self, parent, title):
-        super().__init__(parent, title=title, style=(wx.DEFAULT_FRAME_STYLE | wx.WANTS_CHARS) & ~(wx.MAXIMIZE_BOX))
+        super().__init__(parent, title=title, style=(wx.DEFAULT_FRAME_STYLE | wx.WANTS_CHARS))
 
         self.panel = wx.Panel(self)
         self.list_files = wx.ListBox(self.panel, size=self.FromDIP(wx.Size(350, 30)))
