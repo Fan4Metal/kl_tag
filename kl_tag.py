@@ -21,7 +21,7 @@ from kinopoisk import get_film_info, get_main_genre, common_genres, genres_hiera
 
 ctypes.windll.shcore.SetProcessDpiAwareness(2)
 
-VER = "0.2.4"
+VER = "0.2.5"
 
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s', datefmt='%d.%m.%Y %H:%M:%S')
 log = logging.getLogger("KL_Tag")
@@ -49,9 +49,12 @@ def get_meta(file):
     output = check_output(command.format(ffprobe=ffprobe, file=file), shell=True).decode()
     out_json = json.loads(output)
     audio_streams = 0
+    subtitle_streams = 0
     for strem in out_json['streams']:
         if strem['codec_type'] == 'audio':
             audio_streams += 1
+        if strem['codec_type'] == 'subtitle':
+            subtitle_streams += 1
 
     result = {}
     result['width'] = out_json['streams'][0]['width']
@@ -59,6 +62,7 @@ def get_meta(file):
     result['size'] = convert_bytes(int(out_json['format']['size']))
     result['bit_rate'] = convert_bytes(int(out_json['format']['bit_rate']), is_rate=True)
     result['audio_streams'] = audio_streams
+    result['subtitle_streams'] = subtitle_streams
     return result
 
 
@@ -300,7 +304,7 @@ class MyFrame(wx.Frame):
         self.box1_h.Add(self.box2_v, proportion=0, flag=wx.EXPAND | wx.TOP | wx.BOTTOM | wx.LEFT | wx.RIGHT, border=10)
         self.panel.SetSizer(self.box1_h)
 
-        self.statusbar = self.CreateStatusBar(2, style=(wx.BORDER_DEFAULT) & ~(wx.STB_SHOW_TIPS))
+        self.statusbar = self.CreateStatusBar(2, style=(wx.BORDER_DEFAULT | wx.STB_SIZEGRIP) & ~(wx.STB_SHOW_TIPS))
         self.statusbar.SetStatusWidths([self.FromDIP(350), -1])
         self.statusbar.SetStatusText("")
 
@@ -441,7 +445,8 @@ class MyFrame(wx.Frame):
         if fileinfo:
             self.statusbar.SetStatusText(
                 " Размер: " + fileinfo['size'] + ", битрейт: " + fileinfo['bit_rate'] + ", разрешение: " + str(fileinfo['width']) + "×" +
-                str(fileinfo['height']) + ", аудиотреков: " + str(fileinfo['audio_streams']), 1)
+                str(fileinfo['height']) + ", аудиотреков: " + str(fileinfo['audio_streams']) + ", субтитров: " +
+                str(fileinfo['subtitle_streams']), 1)
 
     def GetTags(self):
         self.tags.title = self.t_title.Value
