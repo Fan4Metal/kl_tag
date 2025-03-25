@@ -28,6 +28,7 @@ log = logging.getLogger("KL_Tag")
 
 wildcard_pics = "Изображения (*.png;*.jpg;*.jpeg;*.webp)|*.png;*.jpg;*.jpeg;*.webp|Все файлы (*.*)|*.*"
 wildcard_png = "Изображения (*.png)|*.png|Все файлы (*.*)|*.*"
+wildcard_png_jpg = "Изображения PNG (*.png)|*.png|Изображения JPG (*.jpg)|*.jpg|Все файлы (*.*)|*.*"
 
 
 def convert_bytes(num, is_rate=False):
@@ -456,12 +457,9 @@ class MyFrame(wx.Frame):
         fileinfo = get_meta(self.list_paths[self.list_files.GetSelection()])
         if fileinfo:
             self.statusbar.SetStatusText(
-                " Размер: " + fileinfo['size'] + 
-                ", битрейт: " + fileinfo['bit_rate'] + 
-                ", время: " + fileinfo['running_time'] +
-                ", разрешение: " + str(fileinfo['width']) + "×" + str(fileinfo['height']) + 
-                ", аудиотреков: " + str(fileinfo['audio_streams']) + 
-                ", субтитров: " + str(fileinfo['subtitle_streams']), 1)
+                " Размер: " + fileinfo['size'] + ", битрейт: " + fileinfo['bit_rate'] + ", время: " + fileinfo['running_time'] +
+                ", разрешение: " + str(fileinfo['width']) + "×" + str(fileinfo['height']) + ", аудиотреков: " +
+                str(fileinfo['audio_streams']) + ", субтитров: " + str(fileinfo['subtitle_streams']), 1)
 
     def GetTags(self):
         self.tags.title = self.t_title.Value
@@ -498,7 +496,8 @@ class MyFrame(wx.Frame):
                 self.list_files.AppendItems(os.path.basename(path))
 
         self.list_files.Select(0)
-        self.tags = self.ReadTags(self.list_paths[self.list_files.GetSelection()])
+        self.current_file = self.list_paths[self.list_files.GetSelection()]
+        self.tags = self.ReadTags(self.current_file)
         if not self.tags.is_ok:
             self.ClearTags()
             self.DisableInterface()
@@ -557,7 +556,8 @@ class MyFrame(wx.Frame):
         return True
 
     def onListClick(self, event):
-        self.tags = self.ReadTags(self.list_paths[self.list_files.GetSelection()])
+        self.current_file = self.list_paths[self.list_files.GetSelection()]
+        self.tags = self.ReadTags(self.current_file)
         if not self.tags.is_ok:
             self.ClearTags()
             self.DisableInterface()
@@ -615,7 +615,12 @@ class MyFrame(wx.Frame):
         return image
 
     def onAddPoster(self, event):
-        with wx.FileDialog(self, "Открыть файл...", "", "", wildcard_pics, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as fileDialog:
+        with wx.FileDialog(self,
+                           "Открыть файл...",
+                           os.path.abspath(os.path.dirname(self.current_file)),
+                           "",
+                           wildcard_pics,
+                           style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as fileDialog:
             if fileDialog.ShowModal() == wx.ID_CANCEL:
                 return
             image_path = fileDialog.GetPath()
@@ -627,7 +632,12 @@ class MyFrame(wx.Frame):
         self.ShowPoster()
 
     def onSavePoster(self, event):
-        with wx.FileDialog(self, "Сохранить файл...", "", "", wildcard_png, style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as fileDialog:
+        with wx.FileDialog(self,
+                           "Сохранить файл...",
+                           os.path.abspath(os.path.dirname(self.current_file)),
+                           os.path.splitext(os.path.basename(self.current_file))[0] + "-poster",
+                           wildcard_png_jpg,
+                           style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as fileDialog:
             if fileDialog.ShowModal() == wx.ID_CANCEL:
                 return
             image_path = fileDialog.GetPath()
