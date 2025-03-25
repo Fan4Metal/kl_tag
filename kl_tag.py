@@ -21,7 +21,7 @@ from kinopoisk import get_film_info, get_main_genre, common_genres, genres_hiera
 
 ctypes.windll.shcore.SetProcessDpiAwareness(2)
 
-VER = "0.2.5"
+VER = "0.2.6"
 
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s', datefmt='%d.%m.%Y %H:%M:%S')
 log = logging.getLogger("KL_Tag")
@@ -38,6 +38,17 @@ def convert_bytes(num, is_rate=False):
             else:
                 return f'{num:3.1f} {x}'
         num /= 1024.0
+
+
+def convert_seconds(input: str):
+    duration = int(float(input))
+    hours = int(duration // 3600)
+    remaining_seconds = duration % 3600
+    minutes = int(remaining_seconds // 60)
+    seconds = remaining_seconds % 60
+
+    # Форматирование строки вывода
+    return f"{hours}:{minutes:02d}:{seconds:02d}"
 
 
 def get_meta(file):
@@ -63,6 +74,7 @@ def get_meta(file):
     result['bit_rate'] = convert_bytes(int(out_json['format']['bit_rate']), is_rate=True)
     result['audio_streams'] = audio_streams
     result['subtitle_streams'] = subtitle_streams
+    result['running_time'] = convert_seconds(out_json['format']['duration'])
     return result
 
 
@@ -444,9 +456,12 @@ class MyFrame(wx.Frame):
         fileinfo = get_meta(self.list_paths[self.list_files.GetSelection()])
         if fileinfo:
             self.statusbar.SetStatusText(
-                " Размер: " + fileinfo['size'] + ", битрейт: " + fileinfo['bit_rate'] + ", разрешение: " + str(fileinfo['width']) + "×" +
-                str(fileinfo['height']) + ", аудиотреков: " + str(fileinfo['audio_streams']) + ", субтитров: " +
-                str(fileinfo['subtitle_streams']), 1)
+                " Размер: " + fileinfo['size'] + 
+                ", битрейт: " + fileinfo['bit_rate'] + 
+                ", время: " + fileinfo['running_time'] +
+                ", разрешение: " + str(fileinfo['width']) + "×" + str(fileinfo['height']) + 
+                ", аудиотреков: " + str(fileinfo['audio_streams']) + 
+                ", субтитров: " + str(fileinfo['subtitle_streams']), 1)
 
     def GetTags(self):
         self.tags.title = self.t_title.Value
