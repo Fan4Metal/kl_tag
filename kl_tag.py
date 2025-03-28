@@ -305,6 +305,8 @@ class EditableListBox(wx.ListBox):
             file_name = self.GetString(selection)
             file_path = self.frame.list_paths[selection]
             new_file_name = f"{self.frame.t_title.GetValue()} ({self.frame.t_year.GetValue()}){os.path.splitext(file_path)[1]}"
+            trtable = new_file_name.maketrans('', '', R'\/:*?"<>')
+            new_file_name = new_file_name.translate(trtable)  # отфильтровываем запрещенные символы в новом имени файла
             new_file_path = os.path.join(os.path.dirname(file_path), new_file_name)
             try:
                 os.rename(file_path, new_file_path)
