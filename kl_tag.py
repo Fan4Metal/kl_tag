@@ -21,7 +21,7 @@ from kinopoisk import get_film_info, get_main_genre, common_genres, genres_hiera
 
 ctypes.windll.shcore.SetProcessDpiAwareness(2)
 
-VER = "0.2.6"
+VER = "0.2.7"
 
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s', datefmt='%d.%m.%Y %H:%M:%S')
 log = logging.getLogger("KL_Tag")
@@ -202,13 +202,129 @@ class CharValidator(wx.Validator):
         event.Skip()
 
 
+def GetTextFromUserEx(message, caption="Ввод текста", default_value="", parent=None, size=(400, 150), style=wx.DEFAULT_DIALOG_STYLE):
+    """
+    Улучшенная версия wx.GetTextFromUser с настройкой размеров и стиля
+    
+    Параметры:
+    - message: текст подсказки
+    - caption: заголовок окна
+    - default_value: значение по умолчанию
+    - parent: родительское окно
+    - size: размер диалога (ширина, высота)
+    - style: стиль окна (wx.DEFAULT_DIALOG_STYLE и др.)
+    
+    Возвращает введенный текст или None, если нажата отмена
+    """
+    dlg = wx.Dialog(parent, title=caption, size=size, style=style)
+
+    panel = wx.Panel(dlg)
+    sizer = wx.BoxSizer(wx.VERTICAL)
+
+    # Текст сообщения
+    msg_text = wx.StaticText(panel, label=message)
+    sizer.Add(msg_text, 0, wx.ALL, 10)
+
+    # Поле ввода
+    text_ctrl = wx.TextCtrl(panel, value=default_value, style=wx.TE_PROCESS_ENTER)
+    text_ctrl.Bind(wx.EVT_TEXT_ENTER, lambda e: dlg.EndModal(wx.ID_OK))
+    sizer.Add(text_ctrl, 0, wx.ALL | wx.EXPAND, 10)
+
+    # Кнопки OK/Cancel - должны быть созданы с panel как родителем!
+    btn_sizer = wx.StdDialogButtonSizer()
+    btn_ok = wx.Button(panel, wx.ID_OK)
+    btn_cancel = wx.Button(panel, wx.ID_CANCEL)
+    btn_sizer.AddButton(btn_ok)
+    btn_sizer.AddButton(btn_cancel)
+    btn_sizer.Realize()
+
+    sizer.Add(btn_sizer, 0, wx.EXPAND | wx.ALL, 10)
+
+    panel.SetSizer(sizer)
+    dlg.Layout()
+
+    result = None
+    if dlg.ShowModal() == wx.ID_OK:
+        result = text_ctrl.GetValue()
+
+    dlg.Destroy()
+    return result
+
+
+class EditableListBox(wx.ListBox):
+
+    def __init__(self, parent, frame, choices=None, **kwargs):
+        super().__init__(parent, choices=choices or [], style=wx.LB_SINGLE, **kwargs)
+        self.Bind(wx.EVT_CONTEXT_MENU, self.on_right_click)
+        self.frame = frame
+
+    def on_right_click(self, event):
+
+        selection = self.GetSelection()
+        if selection != wx.NOT_FOUND:
+            menu = wx.Menu()
+            rename_item = menu.Append(wx.ID_ANY, "Переименовать")
+            self.Bind(wx.EVT_MENU, self.on_rename_item, rename_item)
+            rename_tag_item = menu.Append(wx.ID_ANY, "Переименовать по тегу")
+            self.Bind(wx.EVT_MENU, self.on_reanme_tag_item, rename_tag_item)
+            if self.frame.t_title.GetValue() and self.frame.t_year.GetValue():
+                rename_tag_item.Enable()
+            else:
+                rename_tag_item.Enable(False)
+            self.PopupMenu(menu)
+            menu.Destroy()
+
+    def on_rename_item(self, event):
+        selection = self.GetSelection()
+        if selection != wx.NOT_FOUND:
+            current_value = self.GetString(selection)
+            name, ext = os.path.splitext(current_value)
+            new_value = GetTextFromUserEx("Новое имя файла без расширения:", "Переименование", name, self, size=(self.FromDIP((400, 150))))
+            if not new_value:
+                return
+            trtable = new_value.maketrans('', '', R'\/:*?"<>')
+            new_value = new_value.translate(trtable)  # отфильтровываем запрещенные символы в новом имени файла
+            new_value = new_value + ext
+            if new_value and new_value != current_value:
+                file_path = self.frame.list_paths[selection]
+                new_file_path = os.path.join(os.path.dirname(file_path), new_value)
+                try:
+                    os.rename(file_path, new_file_path)
+                except Exception as e:
+                    wx.MessageDialog(None, f"Ошибка при переименовании файла!\n{e}", "Ошибка!", wx.OK | wx.ICON_ERROR).ShowModal()
+                    return
+                if os.path.isfile(new_file_path):
+                    self.frame.list_paths[selection] = new_file_path
+                    self.SetString(selection, new_value)
+                else:
+                    self.SetString(selection, current_value)
+
+    def on_reanme_tag_item(self, event):
+        selection = self.GetSelection()
+        if selection != wx.NOT_FOUND:
+            file_name = self.GetString(selection)
+            file_path = self.frame.list_paths[selection]
+            new_file_name = f"{self.frame.t_title.GetValue()} ({self.frame.t_year.GetValue()}){os.path.splitext(file_path)[1]}"
+            new_file_path = os.path.join(os.path.dirname(file_path), new_file_name)
+            try:
+                os.rename(file_path, new_file_path)
+            except Exception as e:
+                wx.MessageDialog(None, f"Ошибка при переименовании файла!\n{e}", "Ошибка!", wx.OK | wx.ICON_ERROR).ShowModal()
+                return
+            if os.path.isfile(new_file_path):
+                self.frame.list_paths[selection] = new_file_path
+                self.SetString(selection, new_file_name)
+            else:
+                self.SetString(selection, file_name)
+
+
 class MyFrame(wx.Frame):
 
     def __init__(self, parent, title):
         super().__init__(parent, title=title, style=(wx.DEFAULT_FRAME_STYLE | wx.WANTS_CHARS))
 
         self.panel = wx.Panel(self)
-        self.list_files = wx.ListBox(self.panel, size=self.FromDIP(wx.Size(350, 30)))
+        self.list_files = EditableListBox(self.panel, self, size=self.FromDIP(wx.Size(350, 30)))
         self.Bind(wx.EVT_LISTBOX, self.onListClick, id=self.list_files.GetId())
         self.Bind(wx.EVT_LISTBOX_DCLICK, self.onListDoubleClick, id=self.list_files.GetId())
         self.tag_box_sizer = wx.StaticBoxSizer(wx.VERTICAL, self.panel)
