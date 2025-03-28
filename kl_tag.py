@@ -21,7 +21,7 @@ from kinopoisk import get_film_info, get_main_genre, common_genres, genres_hiera
 
 ctypes.windll.shcore.SetProcessDpiAwareness(2)
 
-VER = "0.2.7"
+VER = "0.2.7 beta"
 
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s', datefmt='%d.%m.%Y %H:%M:%S')
 log = logging.getLogger("KL_Tag")
@@ -434,12 +434,16 @@ class MyFrame(wx.Frame):
         self.panel.SetSizer(self.box1_h)
 
         self.statusbar = self.CreateStatusBar(2, style=(wx.BORDER_DEFAULT | wx.STB_SIZEGRIP) & ~(wx.STB_SHOW_TIPS))
+        wx.EvtHandler.Bind(self, wx.EVT_MENU_HIGHLIGHT_ALL, self.statusbar_status)
         self.statusbar.SetStatusWidths([self.FromDIP(350), -1])
         self.statusbar.SetStatusText("")
 
         self.list_paths = []
         self.tags = Mp4TagsClass()
         self.OpenFiles()
+
+    def statusbar_status(self, event):
+        pass
 
     def onPaste(self, event):
         film_info = get_from_buffer()
