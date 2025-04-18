@@ -48,6 +48,9 @@ def get_film_info(film_id: int):
         r = get('https://kinopoiskapiunofficial.tech/api/v1/staff', headers=headers, params=payload)
         if r.status_code == 200:
             resp_json = r.json()
+        else:
+            print(f"Статус код API: {r.status_code}")
+            return
     except Exception as e:
         print(e)
         return
@@ -75,6 +78,9 @@ def get_film_info(film_id: int):
         r = get(f'https://kinopoiskapiunofficial.tech/api/v2.2/films/{film_id}', headers=headers)
         if r.status_code == 200:
             resp_json = r.json()
+        else:
+            print(f"Статус код API: {r.status_code}")
+            return
     except Exception as e:
         print(e)
         return
@@ -119,7 +125,7 @@ def get_film_info(film_id: int):
 
 
 def get_main_genre(genres: list, genres_hierarchy: list) -> str:
-    """Опреде """
+    """Определение основного жанра из списка жанров."""
     if not genres:
         raise ValueError("Список жанров не может быть пустым.")
 

@@ -13,7 +13,6 @@ from glob import glob
 from subprocess import check_output
 
 import wx
-import wx.adv
 from mutagen.mp4 import MP4, MP4Cover, MP4StreamInfoError, MP4FreeForm, AtomDataType
 from PIL import Image
 
@@ -845,6 +844,7 @@ class MyFrame(wx.Frame):
 
         film_info = get_film_info(film_id)
         if not film_info:
+            wx.MessageDialog(None, "Ошибка! Не удалось получить информацию о фильме!", "Ошибка!", wx.OK | wx.ICON_ERROR).ShowModal()
             return
 
         self.tags.title = film_info['title']
