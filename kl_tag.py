@@ -20,7 +20,7 @@ from kinopoisk import get_film_info, get_main_genre, common_genres, genres_hiera
 
 ctypes.windll.shcore.SetProcessDpiAwareness(2)
 
-VER = "0.2.7 beta"
+VER = "0.2.8"
 
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s', datefmt='%d.%m.%Y %H:%M:%S')
 log = logging.getLogger("KL_Tag")
@@ -61,13 +61,19 @@ def get_meta(file):
     out_json = json.loads(output)
     audio_streams = 0
     subtitle_streams = 0
-    for strem in out_json['streams']:
-        if strem['codec_type'] == 'audio':
+    for stream in out_json['streams']:
+        if stream['codec_type'] == 'audio':
             audio_streams += 1
-        if strem['codec_type'] == 'subtitle':
+        elif stream['codec_type'] == 'subtitle':
             subtitle_streams += 1
 
     result = {}
+    if out_json['streams'][0]['codec_type'] != 'video':
+        result['video'] = False
+        return result
+    else:
+        result['video'] = True
+
     result['width'] = out_json['streams'][0]['width']
     result['height'] = out_json['streams'][0]['height']
     result['size'] = convert_bytes(int(out_json['format']['size']))
@@ -575,12 +581,19 @@ class MyFrame(wx.Frame):
 
     def ShowStatusbar(self):
         self.statusbar.SetStatusText(" Файлов: " + str(len(self.list_paths)), 0)
-        fileinfo = get_meta(self.list_paths[self.list_files.GetSelection()])
-        if fileinfo:
+        try:
+            fileinfo = get_meta(self.list_paths[self.list_files.GetSelection()])
+        except:
+            self.statusbar.SetStatusText(" Не удалось получить информацию о файле!", 1)
+            return
+
+        if fileinfo and fileinfo['video']:
             self.statusbar.SetStatusText(
                 " Размер: " + fileinfo['size'] + ", битрейт: " + fileinfo['bit_rate'] + ", время: " + fileinfo['running_time'] +
                 ", разрешение: " + str(fileinfo['width']) + "×" + str(fileinfo['height']) + ", аудиотреков: " +
                 str(fileinfo['audio_streams']) + ", субтитров: " + str(fileinfo['subtitle_streams']), 1)
+        else:
+            self.statusbar.SetStatusText(" Нет видео дорожки в файле! 😠", 1)
 
     def GetTags(self):
         self.tags.title = self.t_title.Value
