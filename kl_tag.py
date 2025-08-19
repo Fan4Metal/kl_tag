@@ -640,6 +640,7 @@ class MyFrame(wx.Frame):
 
         if os.path.isdir(sys.argv[1]):
             self.list_paths = glob(os.path.join(sys.argv[1], "*.mp4"))
+            self.list_paths.sort()
             if not self.list_paths:
                 self.DisableInterface()
                 return
