@@ -426,6 +426,7 @@ class MyFrame(wx.Frame):
         self.placeholder = Image.open(get_resource_path(R".\images\placeholder.png"))
         self.image = wx.StaticBitmap(self.panel, wx.ID_ANY, self.scale_picture(self.placeholder), size=self.FromDIP((200, 300)))
         self.image.Bind(wx.EVT_CONTEXT_MENU, self.OnPosterContextMenu)
+        self.image.Bind(wx.EVT_LEFT_DCLICK, self.OnPosterDoubleClick)
         self.l_image_size = wx.StaticText(self.panel, label="Нет постера")
         self.b_paste = wx.Button(self.panel, wx.ID_ANY, label="Вставить из буфера", size=self.FromDIP((100, 25)))
         self.Bind(wx.EVT_BUTTON, self.onPaste, id=self.b_paste.GetId())
@@ -739,6 +740,17 @@ class MyFrame(wx.Frame):
             menu.Destroy()
         except AttributeError as e:
             return
+
+    def OnPosterDoubleClick(self, event):
+        current_file = self.list_paths[self.list_files.GetSelection()]
+        self.tags = self.ReadTags(current_file)
+        if not self.tags.is_ok:
+            self.ClearTags()
+            self.DisableInterface()
+        else:  # inserted
+            self.EnableInterface()
+            self.ShowTags()
+            self.ShowPoster()
 
     def scale_picture(self, picture: Image.Image):
 
