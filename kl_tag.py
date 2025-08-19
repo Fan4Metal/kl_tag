@@ -51,6 +51,18 @@ def convert_seconds(input: str):
     return f"{hours}:{minutes:02d}:{seconds:02d}"
 
 
+def check_framerate(r_frame_rate: str, avg_frame_rate: str):
+    """Проерка разницы между `r_frame_rate` и `avg_frame_rate`"""
+    THREASHOLD = 0.05
+    x, y = r_frame_rate.split('/')
+    r_frame_rate_float = float(x) / float(y)
+    x, y = avg_frame_rate.split('/')
+    avg_frame_rate_float = float(x) / float(y)
+    if abs(r_frame_rate_float - avg_frame_rate_float) > r_frame_rate_float * THREASHOLD:
+        return (avg_frame_rate_float, False)
+    return (avg_frame_rate_float, True)
+
+
 def get_meta(file):
     ffprobe = get_resource_path("ffprobe.exe")
     if not os.path.isfile(ffprobe):
@@ -81,6 +93,8 @@ def get_meta(file):
     result['audio_streams'] = audio_streams
     result['subtitle_streams'] = subtitle_streams
     result['running_time'] = convert_seconds(out_json['format']['duration'])
+    result['framerate'], result['framerate_check'] = check_framerate(out_json['streams'][0]['r_frame_rate'],
+                                                                     out_json['streams'][0]['avg_frame_rate'])
     return result
 
 
@@ -588,10 +602,12 @@ class MyFrame(wx.Frame):
             return
 
         if fileinfo and fileinfo['video']:
+            frate = '✔' if fileinfo['framerate_check'] else '✘'
             self.statusbar.SetStatusText(
                 " Размер: " + fileinfo['size'] + ", битрейт: " + fileinfo['bit_rate'] + ", время: " + fileinfo['running_time'] +
                 ", разрешение: " + str(fileinfo['width']) + "×" + str(fileinfo['height']) + ", аудиотреков: " +
-                str(fileinfo['audio_streams']) + ", субтитров: " + str(fileinfo['subtitle_streams']), 1)
+                str(fileinfo['audio_streams']) + ", субтитров: " + str(fileinfo['subtitle_streams']) +
+                f", фреймрейт: {fileinfo['framerate']:.2f} к/с {frate}", 1)
         else:
             self.statusbar.SetStatusText(" Нет видео дорожки в файле! 😠", 1)
 
