@@ -22,7 +22,7 @@ ctypes.windll.shcore.SetProcessDpiAwareness(2)
 
 VER = "0.2.9"
 
-logging.basicConfig(level=logging.INFO, format='[%(asctime)s]%(levelname)s:%(name)s:%(message)s', datefmt='%d.%m.%Y %H:%M:%S')
+logging.basicConfig(level=logging.INFO, format="[%(asctime)s]%(levelname)s:%(name)s:%(message)s", datefmt="%d.%m.%Y %H:%M:%S")
 log = logging.getLogger("KL_Tag")
 
 wildcard_pics = "Изображения (*.png;*.jpg;*.jpeg;*.webp)|*.png;*.jpg;*.jpeg;*.webp|Все файлы (*.*)|*.*"
@@ -31,12 +31,12 @@ wildcard_png_jpg = "Изображения PNG (*.png)|*.png|Изображен�
 
 
 def convert_bytes(num, is_rate=False):
-    for x in ['б', 'Кб', 'Мб', 'Гб', 'Тб']:
+    for x in ["б", "Кб", "Мб", "Гб", "Тб"]:
         if num < 1024.0:
             if is_rate:
-                return f'{num:3.1f} {x}ит/с'
+                return f"{num:3.1f} {x}ит/с"
             else:
-                return f'{num:3.1f} {x}'
+                return f"{num:3.1f} {x}"
         num /= 1024.0
 
 
@@ -54,9 +54,9 @@ def convert_seconds(input: str):
 def check_framerate(r_frame_rate: str, avg_frame_rate: str):
     """Проерка разницы между `r_frame_rate` и `avg_frame_rate`"""
     THREASHOLD = 0.05
-    x, y = r_frame_rate.split('/')
+    x, y = r_frame_rate.split("/")
     r_frame_rate_float = float(x) / float(y)
-    x, y = avg_frame_rate.split('/')
+    x, y = avg_frame_rate.split("/")
     avg_frame_rate_float = float(x) / float(y)
     if abs(r_frame_rate_float - avg_frame_rate_float) > r_frame_rate_float * THREASHOLD:
         return (avg_frame_rate_float, False)
@@ -67,35 +67,35 @@ def get_meta(file):
     ffprobe = get_resource_path("ffprobe.exe")
     if not os.path.isfile(ffprobe):
         log.error(f'Не наден файл: "{ffprobe}"!')
-        return
+        return {"ffprobe": False}
     command = '{ffprobe} -v quiet -print_format json -show_format -show_streams "{file}"'
     output = check_output(command.format(ffprobe=ffprobe, file=file), shell=True).decode()
     out_json = json.loads(output)
     audio_streams = 0
     subtitle_streams = 0
-    for stream in out_json['streams']:
-        if stream['codec_type'] == 'audio':
+    for stream in out_json["streams"]:
+        if stream["codec_type"] == "audio":
             audio_streams += 1
-        elif stream['codec_type'] == 'subtitle':
+        elif stream["codec_type"] == "subtitle":
             subtitle_streams += 1
 
     result = {}
-    if out_json['streams'][0]['codec_type'] != 'video':
-        result['video'] = False
+    if out_json["streams"][0]["codec_type"] != "video":
+        result["video"] = False
         return result
     else:
-        result['video'] = True
+        result["video"] = True
 
-    result['width'] = out_json['streams'][0]['width']
-    result['height'] = out_json['streams'][0]['height']
-    result['size'] = convert_bytes(int(out_json['format']['size']))
-    result['bit_rate'] = convert_bytes(int(out_json['format']['bit_rate']), is_rate=True)
-    result['audio_streams'] = audio_streams
-    result['subtitle_streams'] = subtitle_streams
-    result['running_time'] = convert_seconds(out_json['format']['duration'])
-    result['framerate'], result['framerate_check'] = check_framerate(out_json['streams'][0]['r_frame_rate'],
-                                                                     out_json['streams'][0]['avg_frame_rate'])
-    return result
+    result["width"] = out_json["streams"][0]["width"]
+    result["height"] = out_json["streams"][0]["height"]
+    result["size"] = convert_bytes(int(out_json["format"]["size"]))
+    result["bit_rate"] = convert_bytes(int(out_json["format"]["bit_rate"]), is_rate=True)
+    result["audio_streams"] = audio_streams
+    result["subtitle_streams"] = subtitle_streams
+    result["running_time"] = convert_seconds(out_json["format"]["duration"])
+    result["framerate"], result["framerate_check"] = check_framerate(out_json["streams"][0]["r_frame_rate"],
+                                                                     out_json["streams"][0]["avg_frame_rate"])
+    return {"ffprobe": True, **result}
 
 
 @dataclass
@@ -127,11 +127,11 @@ def get_from_buffer():
     try:
         result = {}
         text: str = read_from_buffer()
-        list = text.split('\n')
-        result['title'] = re.findall(r"(.*)\s\(\d{4}\)", text)[0]
-        result['year'] = list[list.index("Год производства") + 1]
-        result['country'] = list[list.index("Страна") + 1].split(', ')
-        result['director'] = list[list.index("Режиссер") + 1].split(', ')
+        list = text.split("\n")
+        result["title"] = re.findall(r"(.*)\s\(\d{4}\)", text)[0]
+        result["year"] = list[list.index("Год производства") + 1]
+        result["country"] = list[list.index("Страна") + 1].split(", ")
+        result["director"] = list[list.index("Режиссер") + 1].split(", ")
 
         actors_start = list.index("В главных ролях") + 1
         for i in range(actors_start, len(list)):
@@ -139,28 +139,28 @@ def get_from_buffer():
                 actors_stop = i
                 break
 
-        result['actors'] = list[actors_start:actors_stop]
+        result["actors"] = list[actors_start:actors_stop]
         genres_start = list.index("Жанр") + 1
-        result['genres'] = list[genres_start].split(', ')
-        result['main_genre'] = get_main_genre(result['genres'], genres_hierarchy)
+        result["genres"] = list[genres_start].split(", ")
+        result["main_genre"] = get_main_genre(result["genres"], genres_hierarchy)
 
         if re.findall(r"Рейтинг Кинопоиска\s(\d+\.\d+)", text):
-            result['rating'] = re.findall(r"Рейтинг Кинопоиска\s(\d+\.\d+)", text)[0]
-            result['is_rating_kp'] = True
+            result["rating"] = re.findall(r"Рейтинг Кинопоиска\s(\d+\.\d+)", text)[0]
+            result["is_rating_kp"] = True
         elif re.findall(r"IMDb:\s(\d\.\d{2})", text):
-            result['rating'] = re.findall(r"IMDb:\s(\d\.\d{2})", text)[0]
-            result['is_rating_kp'] = False
+            result["rating"] = re.findall(r"IMDb:\s(\d\.\d{2})", text)[0]
+            result["is_rating_kp"] = False
         else:
-            result['rating'] = ""
-            result['is_rating_kp'] = True
+            result["rating"] = ""
+            result["is_rating_kp"] = True
 
         try:
             desc_start = list.index("Видно только вам") + 1
-        except Exception as e:
+        except Exception:
             desc_start = list.index("Сиквелы, приквелы и ремейки") + 1
 
         desc_stop = list.index("Рейтинг фильма")
-        result['description'] = "\n".join(list[desc_start:desc_stop]).strip("\n")
+        result["description"] = "\n".join(list[desc_start:desc_stop]).strip("\n")
 
         return result
     except Exception as e:
@@ -176,10 +176,10 @@ def image_to_file(image):
 
 
 def get_resource_path(relative_path):
-    '''
+    """
     Определение пути для запуска из автономного exe файла.
     Pyinstaller cоздает временную папку, путь в _MEIPASS.
-    '''
+    """
     try:
         base_path = sys._MEIPASS
     except Exception:
@@ -188,7 +188,7 @@ def get_resource_path(relative_path):
 
 
 class CharValidator(wx.Validator):
-    ''' Validates data as it is entered into the text controls. '''
+    """Validates data as it is entered into the text controls."""
 
     def __init__(self, flag):
         wx.Validator.__init__(self)
@@ -196,7 +196,7 @@ class CharValidator(wx.Validator):
         self.Bind(wx.EVT_CHAR, self.OnChar)
 
     def Clone(self):
-        '''Required Validator method'''
+        """Required Validator method"""
         return CharValidator(self.flag)
 
     def Validate(self, win):
@@ -211,12 +211,12 @@ class CharValidator(wx.Validator):
     def OnChar(self, event):
         keycode = int(event.GetKeyCode())
         if keycode < 256:
-            #print keycode
+            # print keycode
             key = chr(keycode)
-            #print key
-            if self.flag == 'no-alpha' and key.isalpha():
+            # print key
+            if self.flag == "no-alpha" and key.isalpha():
                 return
-            if self.flag == 'no-digit' and key.isdigit():
+            if self.flag == "no-digit" and key.isdigit():
                 return
         event.Skip()
 
@@ -224,7 +224,7 @@ class CharValidator(wx.Validator):
 def GetTextFromUserEx(message, caption="Ввод текста", default_value="", parent=None, size=(400, 150), style=wx.DEFAULT_DIALOG_STYLE):
     """
     Улучшенная версия wx.GetTextFromUser с настройкой размеров и стиля
-    
+
     Параметры:
     - message: текст подсказки
     - caption: заголовок окна
@@ -232,7 +232,7 @@ def GetTextFromUserEx(message, caption="Ввод текста", default_value=""
     - parent: родительское окно
     - size: размер диалога (ширина, высота)
     - style: стиль окна (wx.DEFAULT_DIALOG_STYLE и др.)
-    
+
     Возвращает введенный текст или None, если нажата отмена
     """
     dlg = wx.Dialog(parent, title=caption, size=size, style=style)
@@ -278,7 +278,6 @@ class EditableListBox(wx.ListBox):
         self.frame = frame
 
     def on_right_click(self, event):
-
         selection = self.GetSelection()
         if selection != wx.NOT_FOUND:
             menu = wx.Menu()
@@ -301,7 +300,7 @@ class EditableListBox(wx.ListBox):
             new_value = GetTextFromUserEx("Новое имя файла без расширения:", "Переименование", name, self, size=(self.FromDIP((400, 150))))
             if not new_value:
                 return
-            trtable = new_value.maketrans('', '', R'\/:*?"<>')
+            trtable = new_value.maketrans("", "", R'\/:*?"<>')
             new_value = new_value.translate(trtable)  # отфильтровываем запрещенные символы в новом имени файла
             new_value = new_value + ext
             if new_value and new_value != current_value:
@@ -324,7 +323,7 @@ class EditableListBox(wx.ListBox):
             file_name = self.GetString(selection)
             file_path = self.frame.list_paths[selection]
             new_file_name = f"{self.frame.t_title.GetValue()} ({self.frame.t_year.GetValue()}){os.path.splitext(file_path)[1]}"
-            trtable = new_file_name.maketrans('', '', R'\/:*?"<>')
+            trtable = new_file_name.maketrans("", "", R'\/:*?"<>')
             new_file_name = new_file_name.translate(trtable)  # отфильтровываем запрещенные символы в новом имени файла
             new_file_path = os.path.join(os.path.dirname(file_path), new_file_name)
             try:
@@ -397,7 +396,7 @@ class MyFrame(wx.Frame):
         self.l_director = wx.StaticText(self.panel, label="Режиссер:", size=self.l_title.Size)
         self.t_director = wx.TextCtrl(self.panel, value="", size=self.t_country.Size)
         self.l_kpid = wx.StaticText(self.panel, label="Kinopoisk ID:")
-        self.t_kpid = wx.TextCtrl(self.panel, value="", size=(140, 28), validator=CharValidator('no-alpha'))
+        self.t_kpid = wx.TextCtrl(self.panel, value="", size=(140, 28), validator=CharValidator("no-alpha"))
         self.t_kpid.Bind(wx.EVT_TEXT, self.onKPIDChange)
         self.t_kpid.Bind(wx.EVT_TEXT_PASTE, self.onKPIDPaste)
         self.tag_box_director = wx.BoxSizer(orient=wx.HORIZONTAL)
@@ -471,20 +470,20 @@ class MyFrame(wx.Frame):
         film_info = get_from_buffer()
         if not film_info:
             return
-        self.tags.title = film_info['title']
-        self.tags.year = film_info['year']
-        self.tags.country = film_info['country']
-        if film_info['rating'] and film_info['is_rating_kp']:
-            self.tags.rating = film_info['rating']
-        elif not film_info['is_rating_kp'] and film_info['rating']:
-            self.tags.rating = "i" + film_info['rating']
+        self.tags.title = film_info["title"]
+        self.tags.year = film_info["year"]
+        self.tags.country = film_info["country"]
+        if film_info["rating"] and film_info["is_rating_kp"]:
+            self.tags.rating = film_info["rating"]
+        elif not film_info["is_rating_kp"] and film_info["rating"]:
+            self.tags.rating = "i" + film_info["rating"]
         else:
-            self.tags.rating = film_info['rating']
-        self.tags.directors = film_info['director']
-        self.tags.actors = film_info['actors']
-        self.tags.description = film_info['description']
-        self.tags.genres = film_info['genres']
-        self.tags.main_genre = film_info['main_genre']
+            self.tags.rating = film_info["rating"]
+        self.tags.directors = film_info["director"]
+        self.tags.actors = film_info["actors"]
+        self.tags.description = film_info["description"]
+        self.tags.genres = film_info["genres"]
+        self.tags.main_genre = film_info["main_genre"]
         self.ShowTags()
 
     def ReadTags(self, file_path) -> Mp4TagsClass | None:
@@ -537,7 +536,7 @@ class MyFrame(wx.Frame):
             else:
                 result.cover = self.placeholder
                 result.has_cover = False
-        except:
+        except Exception:
             result.cover = self.placeholder
             result.has_cover = False
 
@@ -598,17 +597,24 @@ class MyFrame(wx.Frame):
         self.statusbar.SetStatusText(" Файлов: " + str(len(self.list_paths)), 0)
         try:
             fileinfo = get_meta(self.list_paths[self.list_files.GetSelection()])
-        except:
+        except Exception:
             self.statusbar.SetStatusText(" Не удалось получить информацию о файле!", 1)
             return
 
-        if fileinfo and fileinfo['video']:
-            frate = '✔' if fileinfo['framerate_check'] else '✘'
+        if fileinfo and fileinfo["ffprobe"]:
+            frate = "✔" if fileinfo["framerate_check"] else "✘"
             self.statusbar.SetStatusText(
-                " Размер: " + fileinfo['size'] + ", битрейт: " + fileinfo['bit_rate'] + ", время: " + fileinfo['running_time'] +
-                ", разрешение: " + str(fileinfo['width']) + "×" + str(fileinfo['height']) + ", аудиотреков: " +
-                str(fileinfo['audio_streams']) + ", субтитров: " + str(fileinfo['subtitle_streams']) +
-                f", фреймрейт: {fileinfo['framerate']:.2f} к/с {frate}", 1)
+                f" Размер: {fileinfo['size']}, "
+                f"битрейт: {fileinfo['bit_rate']}, "
+                f"время: {fileinfo['running_time']}, "
+                f"разрешение: {fileinfo['width']}×{fileinfo['height']}, "
+                f"аудиотреков: {fileinfo['audio_streams']}, "
+                f"субтитров: {fileinfo['subtitle_streams']}, "
+                f"фреймрейт: {fileinfo['framerate']:.2f} к/с {frate}",
+                1,
+            )
+        elif fileinfo and fileinfo["ffprobe"] is False:
+            self.statusbar.SetStatusText(" Не найден ffprobe.exe", 1)
         else:
             self.statusbar.SetStatusText(" Нет видео дорожки в файле! 😠", 1)
 
@@ -684,7 +690,7 @@ class MyFrame(wx.Frame):
         video["----:com.apple.iTunes:DIRECTOR"] = MP4FreeForm((";".join(self.tags.directors)).encode(), AtomDataType.UTF8)
         bufferlist = []
         for item in self.tags.actors:
-            bufferlist.append('')
+            bufferlist.append("")
             bufferlist.append(item)
         video["----:com.apple.iTunes:Actors"] = MP4FreeForm(("\r\n".join(bufferlist)).encode(), AtomDataType.UTF8)
         if self.tags.rating:
@@ -739,7 +745,7 @@ class MyFrame(wx.Frame):
                 menu.Append(item3)
             self.PopupMenu(menu)
             menu.Destroy()
-        except AttributeError as e:
+        except AttributeError:
             return
 
     def OnPosterDoubleClick(self, event):
@@ -778,12 +784,14 @@ class MyFrame(wx.Frame):
         return image
 
     def onAddPoster(self, event):
-        with wx.FileDialog(self,
-                           "Открыть файл...",
-                           os.path.abspath(os.path.dirname(self.current_file)),
-                           "",
-                           wildcard_pics,
-                           style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as fileDialog:
+        with wx.FileDialog(
+                self,
+                "Открыть файл...",
+                os.path.abspath(os.path.dirname(self.current_file)),
+                "",
+                wildcard_pics,
+                style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST,
+        ) as fileDialog:
             if fileDialog.ShowModal() == wx.ID_CANCEL:
                 return
             image_path = fileDialog.GetPath()
@@ -795,12 +803,14 @@ class MyFrame(wx.Frame):
         self.ShowPoster()
 
     def onSavePoster(self, event):
-        with wx.FileDialog(self,
-                           "Сохранить файл...",
-                           os.path.abspath(os.path.dirname(self.current_file)),
-                           os.path.splitext(os.path.basename(self.current_file))[0] + "-poster",
-                           wildcard_png_jpg,
-                           style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as fileDialog:
+        with wx.FileDialog(
+                self,
+                "Сохранить файл...",
+                os.path.abspath(os.path.dirname(self.current_file)),
+                os.path.splitext(os.path.basename(self.current_file))[0] + "-poster",
+                wildcard_png_jpg,
+                style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
+        ) as fileDialog:
             if fileDialog.ShowModal() == wx.ID_CANCEL:
                 return
             image_path = fileDialog.GetPath()
@@ -863,7 +873,7 @@ class MyFrame(wx.Frame):
 
     def OpenOnKPClick(self, event):
         if self.t_kpid.GetValue():
-            webbrowser.open(f'https://www.kinopoisk.ru/film/{self.t_kpid.GetValue()}/')
+            webbrowser.open(f"https://www.kinopoisk.ru/film/{self.t_kpid.GetValue()}/")
 
     def onKPIDChange(self, event):
         self.check_kpid()
@@ -889,22 +899,22 @@ class MyFrame(wx.Frame):
             wx.MessageDialog(None, "Ошибка! Не удалось получить информацию о фильме!", "Ошибка!", wx.OK | wx.ICON_ERROR).ShowModal()
             return
 
-        self.tags.title = film_info['title']
-        self.tags.year = film_info['year']
-        self.tags.country = film_info['country']
-        if film_info['rating'] and film_info['is_rating_kp']:
-            self.tags.rating = film_info['rating']
-        elif not film_info['is_rating_kp'] and film_info['rating']:
-            self.tags.rating = "i" + film_info['rating']
+        self.tags.title = film_info["title"]
+        self.tags.year = film_info["year"]
+        self.tags.country = film_info["country"]
+        if film_info["rating"] and film_info["is_rating_kp"]:
+            self.tags.rating = film_info["rating"]
+        elif not film_info["is_rating_kp"] and film_info["rating"]:
+            self.tags.rating = "i" + film_info["rating"]
         else:
-            self.tags.rating = film_info['rating']
-        self.tags.directors = film_info['director']
-        self.tags.actors = film_info['actors']
-        self.tags.description = film_info['description']
-        self.tags.genres = film_info['genres']
-        self.tags.main_genre = film_info['main_genre']
-        if film_info['cover']:
-            cover = film_info['cover']
+            self.tags.rating = film_info["rating"]
+        self.tags.directors = film_info["director"]
+        self.tags.actors = film_info["actors"]
+        self.tags.description = film_info["description"]
+        self.tags.genres = film_info["genres"]
+        self.tags.main_genre = film_info["main_genre"]
+        if film_info["cover"]:
+            cover = film_info["cover"]
             cover = self.image_cut(cover)
             cover = cover.convert("RGB")
             self.tags.cover = cover
@@ -948,5 +958,5 @@ def main():
     app.MainLoop()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
