@@ -20,7 +20,7 @@ from kinopoisk import get_film_info, get_main_genre, common_genres, genres_hiera
 
 ctypes.windll.shcore.SetProcessDpiAwareness(2)
 
-VER = "0.2.9"
+__VERSION__ = "0.2.10"
 
 logging.basicConfig(level=logging.INFO, format="[%(asctime)s]%(levelname)s:%(name)s:%(message)s", datefmt="%d.%m.%Y %H:%M:%S")
 log = logging.getLogger("KL_Tag")
@@ -28,6 +28,17 @@ log = logging.getLogger("KL_Tag")
 wildcard_pics = "Изображения (*.png;*.jpg;*.jpeg;*.webp)|*.png;*.jpg;*.jpeg;*.webp|Все файлы (*.*)|*.*"
 wildcard_png = "Изображения (*.png)|*.png|Все файлы (*.*)|*.*"
 wildcard_png_jpg = "Изображения PNG (*.png)|*.png|Изображения JPG (*.jpg)|*.jpg|Все файлы (*.*)|*.*"
+
+
+def get_resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
+
+FFPROBE = get_resource_path("ffprobe.exe")
 
 
 def convert_bytes(num, is_rate=False):
@@ -63,14 +74,24 @@ def check_framerate(r_frame_rate: str, avg_frame_rate: str):
     return (avg_frame_rate_float, True)
 
 
+def run_ffprobe_json(args: list[str]) -> dict:
+    try:
+        p = subprocess.run(
+            args, capture_output=True, text=True, check=True, errors="replace", encoding="utf-8", creationflags=subprocess.CREATE_NO_WINDOW
+        )
+        if not p.stdout.strip():
+            return {}
+        return json.loads(p.stdout)
+    except Exception as e:
+        log.error(f"Не удалось выполнить ffprobe: {e}")
+        return {}
+
+
 def get_meta(file):
-    ffprobe = get_resource_path("ffprobe.exe")
-    if not os.path.isfile(ffprobe):
-        log.error(f'Не наден файл: "{ffprobe}"!')
+    if not os.path.isfile(FFPROBE):
+        log.error(f'Не наден файл: "{FFPROBE}"!')
         return {"ffprobe": False}
-    command = '{ffprobe} -v quiet -print_format json -show_format -show_streams "{file}"'
-    output = check_output(command.format(ffprobe=ffprobe, file=file), shell=True).decode()
-    out_json = json.loads(output)
+    out_json = run_ffprobe_json([FFPROBE, "-v", "quiet", "-print_format", "json", "-show_format", "-show_streams", file])
     audio_streams = 0
     subtitle_streams = 0
     for stream in out_json["streams"]:
@@ -93,8 +114,9 @@ def get_meta(file):
     result["audio_streams"] = audio_streams
     result["subtitle_streams"] = subtitle_streams
     result["running_time"] = convert_seconds(out_json["format"]["duration"])
-    result["framerate"], result["framerate_check"] = check_framerate(out_json["streams"][0]["r_frame_rate"],
-                                                                     out_json["streams"][0]["avg_frame_rate"])
+    result["framerate"], result["framerate_check"] = check_framerate(
+        out_json["streams"][0]["r_frame_rate"], out_json["streams"][0]["avg_frame_rate"]
+    )
     return {"ffprobe": True, **result}
 
 
@@ -173,18 +195,6 @@ def image_to_file(image):
     image_file = io.BytesIO()
     image.save(image_file, format="PNG")
     return image_file
-
-
-def get_resource_path(relative_path):
-    """
-    Определение пути для запуска из автономного exe файла.
-    Pyinstaller cоздает временную папку, путь в _MEIPASS.
-    """
-    try:
-        base_path = sys._MEIPASS
-    except Exception:
-        base_path = os.path.abspath(".")
-    return os.path.join(base_path, relative_path)
 
 
 class CharValidator(wx.Validator):
@@ -271,7 +281,6 @@ def GetTextFromUserEx(message, caption="Ввод текста", default_value=""
 
 
 class EditableListBox(wx.ListBox):
-
     def __init__(self, parent, frame, choices=None, **kwargs):
         super().__init__(parent, choices=choices or [], style=wx.LB_SINGLE, **kwargs)
         self.Bind(wx.EVT_CONTEXT_MENU, self.on_right_click)
@@ -339,7 +348,6 @@ class EditableListBox(wx.ListBox):
 
 
 class MyFrame(wx.Frame):
-
     def __init__(self, parent, title):
         super().__init__(parent, title=title, style=(wx.DEFAULT_FRAME_STYLE | wx.WANTS_CHARS))
 
@@ -597,8 +605,8 @@ class MyFrame(wx.Frame):
         self.statusbar.SetStatusText(" Файлов: " + str(len(self.list_paths)), 0)
         try:
             fileinfo = get_meta(self.list_paths[self.list_files.GetSelection()])
-        except Exception:
-            self.statusbar.SetStatusText(" Не удалось получить информацию о файле!", 1)
+        except Exception as e:
+            self.statusbar.SetStatusText(f" Не удалось получить информацию о файле: {e}", 1)
             return
 
         if fileinfo and fileinfo["ffprobe"]:
@@ -760,7 +768,6 @@ class MyFrame(wx.Frame):
             self.ShowPoster()
 
     def scale_picture(self, picture: Image.Image):
-
         def PIL2wx(image):
             width, height = image.size
             return wx.Bitmap.FromBuffer(width, height, image.tobytes())
@@ -785,12 +792,12 @@ class MyFrame(wx.Frame):
 
     def onAddPoster(self, event):
         with wx.FileDialog(
-                self,
-                "Открыть файл...",
-                os.path.abspath(os.path.dirname(self.current_file)),
-                "",
-                wildcard_pics,
-                style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST,
+            self,
+            "Открыть файл...",
+            os.path.abspath(os.path.dirname(self.current_file)),
+            "",
+            wildcard_pics,
+            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST,
         ) as fileDialog:
             if fileDialog.ShowModal() == wx.ID_CANCEL:
                 return
@@ -804,12 +811,12 @@ class MyFrame(wx.Frame):
 
     def onSavePoster(self, event):
         with wx.FileDialog(
-                self,
-                "Сохранить файл...",
-                os.path.abspath(os.path.dirname(self.current_file)),
-                os.path.splitext(os.path.basename(self.current_file))[0] + "-poster",
-                wildcard_png_jpg,
-                style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
+            self,
+            "Сохранить файл...",
+            os.path.abspath(os.path.dirname(self.current_file)),
+            os.path.splitext(os.path.basename(self.current_file))[0] + "-poster",
+            wildcard_png_jpg,
+            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
         ) as fileDialog:
             if fileDialog.ShowModal() == wx.ID_CANCEL:
                 return
@@ -949,7 +956,7 @@ class MyFrame(wx.Frame):
 
 def main():
     app = wx.App()
-    top = MyFrame(None, title=f"Kinolist Tag Editor {VER}")
+    top = MyFrame(None, title=f"Kinolist Tag Editor {__VERSION__}")
     top.SetIcon(wx.Icon(get_resource_path("./images/favicon.ico")))
     top.SetClientSize(top.FromDIP(wx.Size(1150, 600)))
     top.Centre()
