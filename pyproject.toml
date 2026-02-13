@@ -1,0 +1,13 @@
+[project]
+name = "kl-tag"
+version = "0.2.10"
+description = "Simple MP4 tag editor"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "mutagen>=1.47.0",
+    "pillow>=12.1.1",
+    "pyinstaller>=6.18.0",
+    "requests>=2.32.5",
+    "wxpython>=4.2.5",
+]
