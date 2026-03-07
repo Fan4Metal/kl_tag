@@ -134,6 +134,7 @@ class Mp4TagsClass:
     has_cover: bool = False
     genres: list | str = ""
     main_genre: str = ""
+    is_ok: bool = False
 
 
 def read_from_buffer():
